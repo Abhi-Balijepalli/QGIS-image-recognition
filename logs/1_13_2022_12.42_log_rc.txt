@@ -1,0 +1,22 @@
+QGIS version: 3.16.11-Hannover
+QGIS code revision: 26cc1c76
+Qt version: 5.15.2
+GDAL version: 3.3.1
+GEOS version: 3.9.1-CAPI-1.14.2
+PROJ version: Rel. 8.1.1, September 1st, 2021
+Processing algorithm…
+Algorithm 'Build virtual raster' starting…
+Input parameters:
+{ 'ADD_ALPHA' : False, 'ASSIGN_CRS' : None, 'EXTRA' : '', 'INPUT' : ['T:/Teach/Classes/CS461/ReedCanary/Images/pix4D_2019-04-03_transparent_reflectance_w550nm.tif','T:/Teach/Classes/CS461/ReedCanary/Images/pix4D_2019-04-03_transparent_reflectance_w650nm.tif','T:/Teach/Classes/CS461/ReedCanary/Images/pix4D_2019-04-03_transparent_reflectance_w710nm.tif','T:/Teach/Classes/CS461/ReedCanary/Images/pix4D_2019-04-03_transparent_reflectance_w850nm.tif'], 'OUTPUT' : 'TEMPORARY_OUTPUT', 'PROJ_DIFFERENCE' : False, 'RESAMPLING' : 0, 'RESOLUTION' : 0, 'SEPARATE' : True, 'SRC_NODATA' : '' }
+
+GDAL command:
+gdalbuildvrt -resolution average -separate -r nearest -input_file_list C:/Users/logan/AppData/Local/Temp/processing_nhOYVl/f277cb1790b04991b5a6607541b04151/buildvrtInputFiles.txt C:/Users/logan/AppData/Local/Temp/processing_nhOYVl/c179068b3ea54c7a9cf36cef60695fb9/OUTPUT.vrt
+GDAL command output:
+0...10...20...30...40...50...60...70...80...90...100 - done.
+
+Execution completed in 0.19 seconds
+Results:
+{'OUTPUT': 'C:/Users/logan/AppData/Local/Temp/processing_nhOYVl/c179068b3ea54c7a9cf36cef60695fb9/OUTPUT.vrt'}
+
+Loading resulting layers
+Algorithm 'Build virtual raster' finished
