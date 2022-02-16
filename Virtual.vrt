@@ -1,0 +1,48 @@
+<VRTDataset rasterXSize="36723" rasterYSize="28198">
+  <SRS dataAxisToSRSAxisMapping="1,2">PROJCS["NAD83(HARN) / Oregon North (ft)",GEOGCS["NAD83(HARN)",DATUM["NAD83_High_Accuracy_Reference_Network",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6152"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4152"]],PROJECTION["Lambert_Conformal_Conic_2SP"],PARAMETER["latitude_of_origin",43.6666666666667],PARAMETER["central_meridian",-120.5],PARAMETER["standard_parallel_1",46],PARAMETER["standard_parallel_2",44.3333333333333],PARAMETER["false_easting",8202099.738],PARAMETER["false_northing",0],UNIT["foot",0.3048,AUTHORITY["EPSG","9002"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","2913"]]</SRS>
+  <GeoTransform>  7.5597209378500003e+06,  8.2420000000000007e-02,  0.0000000000000000e+00,  6.8285126699000003e+05,  0.0000000000000000e+00, -8.2420000000000007e-02</GeoTransform>
+  <VRTRasterBand dataType="Float32" band="1">
+    <NoDataValue>-10000</NoDataValue>
+    <ComplexSource resampling="nearest">
+      <SourceFilename relativeToVRT="0">T:/Teach/Classes/CS461/ReedCanary/Images/pix4D_2019-05-01_transparent_reflectance_w710nm.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="36723" RasterYSize="28198" DataType="Float32" BlockXSize="36723" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="36723" ySize="28198" />
+      <DstRect xOff="0" yOff="0" xSize="36723" ySize="28198" />
+      <NODATA>-10000</NODATA>
+    </ComplexSource>
+  </VRTRasterBand>
+  <VRTRasterBand dataType="Float32" band="2">
+    <NoDataValue>-10000</NoDataValue>
+    <ComplexSource resampling="nearest">
+      <SourceFilename relativeToVRT="0">T:/Teach/Classes/CS461/ReedCanary/Images/pix4D_2019-05-01_transparent_reflectance_w850nm.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="36723" RasterYSize="28198" DataType="Float32" BlockXSize="36723" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="36723" ySize="28198" />
+      <DstRect xOff="0" yOff="0" xSize="36723" ySize="28198" />
+      <NODATA>-10000</NODATA>
+    </ComplexSource>
+  </VRTRasterBand>
+  <VRTRasterBand dataType="Float32" band="3">
+    <NoDataValue>-10000</NoDataValue>
+    <ComplexSource resampling="nearest">
+      <SourceFilename relativeToVRT="0">T:/Teach/Classes/CS461/ReedCanary/Images/pix4D_2019-05-01_transparent_reflectance_w550nm.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="36723" RasterYSize="28198" DataType="Float32" BlockXSize="36723" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="36723" ySize="28198" />
+      <DstRect xOff="0" yOff="0" xSize="36723" ySize="28198" />
+      <NODATA>-10000</NODATA>
+    </ComplexSource>
+  </VRTRasterBand>
+  <VRTRasterBand dataType="Float32" band="4">
+    <NoDataValue>-10000</NoDataValue>
+    <ComplexSource resampling="nearest">
+      <SourceFilename relativeToVRT="0">T:/Teach/Classes/CS461/ReedCanary/Images/pix4D_2019-05-01_transparent_reflectance_w650nm.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="36723" RasterYSize="28198" DataType="Float32" BlockXSize="36723" BlockYSize="1" />
+      <SrcRect xOff="0" yOff="0" xSize="36723" ySize="28198" />
+      <DstRect xOff="0" yOff="0" xSize="36723" ySize="28198" />
+      <NODATA>-10000</NODATA>
+    </ComplexSource>
+  </VRTRasterBand>
+</VRTDataset>
