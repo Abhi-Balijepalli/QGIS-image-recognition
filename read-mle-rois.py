@@ -90,7 +90,7 @@ start_time = time.time()
 #band_info = {
 #    band_number: [wavelength(nm), "wavelength(nm) as string", "empty value that will later hold this band's raster layer"]
 #}
-files = [] # we need to change this to the path of the tifs
+files = [] # we need to change this to the path of the tifs, create a function to store them in arrays?
 band_info = {} # new band_info
 def populate():
     #files for the tif will be: nm_name.tif | nm is the 550,650...etc.
@@ -167,20 +167,18 @@ def set_information():
             missing_layers_error_message = missing_layers_error_message+"\nERROR: "+band_info[b][1]+"nm Raster Not found!\n'"+band_info[b][1]+"nm' must be in the title of a single raster layer.\n"
         else:
             print(band_info[b][1]+" tif layer: "+band_info[b][2].name())
-
     #error message for missing Roi shapefile
     if roi_shapefile == "":
         missing_layers_error_message = missing_layers_error_message+"\nERROR: mle-roi shapefile not found!\n'mle-roi' must be in the title of a single shapefile layer.\n"
     else:
         print("ROI Shapefile: "+roi_shapefile.name())
-    
     #error message for missing treatment areas shapefile
     if treatment_areas == "":
         missing_layers_error_message = missing_layers_error_message+"\nERROR: treatment-areas shapefile not found!\n'treatment-areas' must be in the title of a single shapefile layer.\n"
     else:
         print("Treatment Areas: "+treatment_areas.name())
 
- #This function will return a list of unique colors from a number n.
+#This function will return a list of unique colors from a number n.
 #The colors returned will be as different as possible, given n
 #This function could definetley be shortned to a fraction of the lines
 def Generate_Class_Colors(n): # n = len(unique_roi_ids)
@@ -704,7 +702,6 @@ def treatment_area_calculations():
             break
     print("Treatment area pixels read.")
 
-
     #Print the matrix
     cm_column_labels = " Pred. unclas."
     for class_id in unique_roi_ids:
@@ -719,13 +716,9 @@ def treatment_area_calculations():
     
     #n = the total number of values in the confusion matrix (true positive + false positive + true negative + false negative)
     n = 0
-    
-    #p0 = the toal number of values in the diagonal of the matrix (true positive)
-    p0 = 0
-    
-    #pe = 
-    pe = 0
-    #To calculate pe, we need to store the totals for every row and every column, this will be done with two dictionaries
+
+    p0 = 0 #p0 = the toal number of values in the diagonal of the matrix (true positive)
+    pe = 0 #To calculate pe, we need to store the totals for every row and every column, this will be done with two dictionaries
     cm_row_total_dict = {}
     cm_column_total_dict = {}
     for class_id in unique_roi_ids:
@@ -750,15 +743,11 @@ def treatment_area_calculations():
                 cm_column_total_dict[column] += value
     if n > 0:
         p0 /= n
-    
         #pe equals (the sum of all classes' row totals time column totals) divided by n^2
         for class_id in unique_roi_ids:
             pe += (cm_row_total_dict[class_id] * cm_column_total_dict[class_id])
-        
-        pe /= (n*n)
-        
+        pe /= (n*n)    
         k = (p0-pe)/(1-pe)
-    
     
     print("p0: "+str(p0))
     print("pe: "+str(pe))
@@ -801,9 +790,7 @@ def treatment_area_calculations():
             print("\tRecall: "+str(recall))
         else:
             print("\tRecall: divide by 0 error")
-        
     print("Precision and Recall Done.")
-    
     print("Saving output Image...")  
     #Make an image from the array that stored the location and class of each pixel
     output_image = im.fromarray(output_image_array,'RGB')
