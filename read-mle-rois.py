@@ -180,12 +180,57 @@ def set_information():
     else:
         print("Treatment Areas: "+treatment_areas.name())
 
+ #This function will return a list of unique colors from a number n.
+#The colors returned will be as different as possible, given n
+#This function could definetley be shortned to a fraction of the lines
+def Generate_Class_Colors(n): # n = len(unique_roi_ids)
+    class_colors_tbl = {
+        -1: [0,0,0]
+    }
+    for i in range(1,n+1):
+        r = 0
+        g = 0
+        b = 0
+        #p represents the proprtion of the current iteration, if there are 2 colors (n = 2),
+        #p will first be 0.5 and then 1
+        p = i/n
+        #This six state conditional has one condition for each of the 6 "phases" in the color variation method used
+        #one phase each for increase/decrease of r/g/b, (2*3 = 6) 
+        if p > 0 and p <= 1/6:
+            r = 255
+            g = 1530*p
+            b = 0
+        elif p > 1/6 and p <= 2/6:
+            r = 255-(1530*(p-(1/6)))
+            g = 255
+            b = 0
+        elif p > 2/6 and p <= 3/6:
+            r = 0
+            g = 255
+            b = 1530*(p-(2/6))
+        elif p > 3/6 and p <= 4/6:
+            r = 0
+            g = 255-(1530*(p-(3/6)))
+            b = 255
+        elif p > 4/6 and p <= 5/6:
+            r = 1530*(p-(4/6))
+            g = 0
+            b = 255
+        elif p > 5/6 and p <= 1:
+            r = 255
+            g = 0
+            b = 255-(1530*(p-(5/6)))
+        class_colors_tbl[i] = [math.floor(r),math.floor(g),math.floor(b)]
+    print("class_colors_tbl",class_colors_tbl)
+    return class_colors_tbl
+
 unique_roi_ids = []
 class_colors = None
 mle_adjusted_minimum_probability = None
 num_rois = 0
 raster_pixel_scale_x = None
 raster_pixel_scale_y = None
+
 def raster_definition():
 #If the error message is not empty, then print it. Otherwise, continue
     if missing_layers_error_message != "":
@@ -227,50 +272,6 @@ def raster_definition():
             num_rois += 1
             # print("ROI class: "+str(roi.attribute(roi_class_identifier)))
         print(str(num_rois)+" ROIs Counted.\n\n")
-
-        #This function will return a list of unique colors from a number n.
-        #The colors returned will be as different as possible, given n
-        #This function could definetley be shortned to a fraction of the lines
-        def Generate_Class_Colors(n): # n = len(unique_roi_ids)
-            class_colors_tbl = {
-                -1: [0,0,0]
-            }
-            for i in range(1,n+1):
-                r = 0
-                g = 0
-                b = 0
-                #p represents the proprtion of the current iteration, if there are 2 colors (n = 2),
-                #p will first be 0.5 and then 1
-                p = i/n
-                #This six state conditional has one condition for each of the 6 "phases" in the color variation method used
-                #one phase each for increase/decrease of r/g/b, (2*3 = 6) 
-                if p > 0 and p <= 1/6:
-                    r = 255
-                    g = 1530*p
-                    b = 0
-                elif p > 1/6 and p <= 2/6:
-                    r = 255-(1530*(p-(1/6)))
-                    g = 255
-                    b = 0
-                elif p > 2/6 and p <= 3/6:
-                    r = 0
-                    g = 255
-                    b = 1530*(p-(2/6))
-                elif p > 3/6 and p <= 4/6:
-                    r = 0
-                    g = 255-(1530*(p-(3/6)))
-                    b = 255
-                elif p > 4/6 and p <= 5/6:
-                    r = 1530*(p-(4/6))
-                    g = 0
-                    b = 255
-                elif p > 5/6 and p <= 1:
-                    r = 255
-                    g = 0
-                    b = 255-(1530*(p-(5/6)))
-                class_colors_tbl[i] = [math.floor(r),math.floor(g),math.floor(b)]
-            print("class_colors_tbl",class_colors_tbl)
-            return class_colors_tbl
 
         #Count the number of unique classes among the ROIs in the roi-shapefile
         print("Counting Number of Classes...")
@@ -414,6 +415,8 @@ output_image_y_min = 9999999999
 output_image_y_max = 0
 cm_characters_per_entry = 5
 confusion_matrix = {}
+
+#This function will space the text in the printing of the confusion matrix
 def SpaceText(val,num_chars,first_char,last_char):
         text = str(val)
         for i in range(len(text),num_chars):
@@ -480,50 +483,12 @@ def calculate_std_and_mean():
     #print("class_stats",class_statistics_dict)
     #print("Statistics Dictionary Generated\n\n")
 
-
-
     #Actual equation for probability of a particular variable (band) for a given item (pixel).
-    def Normal_Distribution_Probability_Density(x,mean,sd):
-        return (1/(sd*(math.pow(2*pi,0.5))))*math.pow(euler,(-1/2)*math.pow(((x-mean)/(sd)),2))
+   
 
     #this function will actually consider the values at all bands in the table passed into it
     #This function is ran once for every pixel read,
     #so this function is only classifiying one pixel each time it is called
-    def MLE(value_list):
-        #initilize the highest found likelihood to 0
-        max_likelihood = 0.0
-        #Initilize the class id identified to -1. if not one class exceeds the minimum likelihood, we will return 0 for unclassified
-        max_likelilood_class_id = -1
-        #loop over all class ids
-        print("class_stats 467", class_statistics_dict)
-        for class_id in unique_roi_ids:
-            #access the dictionary at the index of the current class to get the mean and stdev
-            class_stats = class_statistics_dict[class_id]
-            #print("class_stats 470", class_stats)
-            #because this probability will be multipled by the probabilty at each band, initilize it to 1
-            total_class_probability = 1
-            for b in band_info:
-                #Band_info is indexed from 1, while value list is indexed from 0,
-                #so subtract 1 from b to index the value list
-                current_pixel_value = value_list[b-1]
-                #get the num of the wavelength to access that band in the stats dictionary
-                wavelength = band_info[b][0]
-                band_stats = class_stats[wavelength]
-                band_mean = band_stats[index_mean]
-                band_stdev = band_stats[index_stdev]
-                #Now pass the pixel's value, class's mean at this band, and class's stdev at this band into the NPDFunction
-                current_band_probability = Normal_Distribution_Probability_Density(current_pixel_value,band_mean,band_stdev)
-                #Multiply the class's total probability for all bands together
-                total_class_probability *= current_band_probability
-                
-            #now that we have to collective probabilities from this class multiplied together, we can see if it exceeds
-            #the minimum probability and the highest proability (maximum likelihood) found from all classes
-            if total_class_probability >= mle_adjusted_minimum_probability and total_class_probability > max_likelihood:
-                #If so, update the class that has now been deemed to be most likely the true container of this pixel
-                max_likelihood = total_class_probability
-                max_likelilood_class_id = class_id
-        #After iterating over all classes, return the id of the class that had the estimated maximum likelihood based off of the NPDF
-        return max_likelilood_class_id
 
     #This dictionary will store the number of classified pixels,
     #and the class that they were classified into as well as the treatment group they were read from
@@ -541,17 +506,6 @@ def calculate_std_and_mean():
         # print(classified_pixel_dictionary)
     print("Empty Classified Pixel Dictionary Generated.\n\n")
 
-
-    #This function will space the text in the printing of the confusion matrix
-    def SpaceText(val,num_chars,first_char,last_char):
-        text = str(val)
-        for i in range(len(text),num_chars):
-            if i%2 == 0:
-                text = text+" "
-            else:
-                text = " "+text
-        return first_char+text+last_char
-    
     #the confusion matrix will be generated as a dictionary
     print("Generating Confusion Matrix to Validate Classified Pixels...")
     #one row and column for each class,
@@ -594,6 +548,10 @@ def calculate_std_and_mean():
 treatment_area_offsets = {}
 def Normal_Distribution_Probability_Density(x,mean,sd):
     return (1/(sd*(math.pow(2*pi,0.5))))*math.pow(euler,(-1/2)*math.pow(((x-mean)/(sd)),2))
+
+#this function will actually consider the values at all bands in the table passed into it
+#This function is ran once for every pixel read,
+#so this function is only classifiying one pixel each time it is called
 def MLE(value_list):
         #initilize the highest found likelihood to 0
         max_likelihood = 0.0
@@ -629,6 +587,7 @@ def MLE(value_list):
                 max_likelilood_class_id = class_id
         #After iterating over all classes, return the id of the class that had the estimated maximum likelihood based off of the NPDF
         return max_likelilood_class_id
+
 def treatment_area_calculations():
     for treatment_area in treatment_areas.getFeatures():
         treatment_area_geometry = treatment_area.geometry()
@@ -852,3 +811,12 @@ def treatment_area_calculations():
     output_image_path = output_image_dir+"/"+output_image_filename
     output_image.save(output_image_path,'PNG',quality=100)
     print("Output saved as "+output_image_path)
+
+if __name__ == "__main__":
+    # I will add detailed descriptions for each function after debugging
+    populate()
+    set_information()
+    raster_definition()
+    make_image()
+    calculate_std_and_mean()
+    treatment_area_calculations()
