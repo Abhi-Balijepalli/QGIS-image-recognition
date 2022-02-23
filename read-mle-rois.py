@@ -90,12 +90,24 @@ start_time = time.time()
 #band_info = {
 #    band_number: [wavelength(nm), "wavelength(nm) as string", "empty value that will later hold this band's raster layer"]
 #}
-band_info  = {
-	1: [550,"550",""],
-	2: [650,"650",""],
-	3: [710,"710",""],
-	4: [850,"850",""]
-}
+files = [] # we need to change this to the path of the tifs
+band_info = {} # new band_info
+def populate():
+    #files for the tif will be: nm_name.tif | nm is the 550,650...etc.
+    key_num = 1
+    for tif_image in files:
+        temp_arr = tif_image.split("_")
+        band_number = temp_arr[0]
+        band_info[key_num] = [band_number, str(band_number), ""] #this will automate mason's band_info hashmap
+        key_num += 1
+    return band_info
+
+# band_info  = {
+# 	1: [550,"550",""],
+# 	2: [650,"650",""],
+# 	3: [710,"710",""],
+# 	4: [850,"850",""]
+# }
 
 #These 4 variables will all later be set the their apporopriate shapefiles
 #An empty string is only used for a placeholder until the script can find the layers
@@ -131,152 +143,151 @@ print("Reading Layers and setting variables...")
 #Read and set variables that were unset above
 #the layers variable will be used to access all the map layers in the current QGIS project
 layers = QgsProject.instance().mapLayers().values()
+
 #This will loop over every band, searching for map layers with the string "(wavelength)nm" in their title, such as "550nm"
-for b in band_info:
+def set_information():
+    for b in band_info:
+        for layer in layers:
+            if band_info[b][1]+"nm" in layer.name():
+                #Once a layer is found that matches the criterion, the third value in the band_info dictionary will be set to that layer, so it can be accessed later
+                band_info[b][2] = layer
     for layer in layers:
-        if band_info[b][1]+"nm" in layer.name():
-            #Once a layer is found that matches the criterion, the third value in the band_info dictionary will be set to that layer, so it can be accessed later
-            band_info[b][2] = layer
-for layer in layers:
-    if "mle-roi" in layer.name():
-        #the variable roi_shapefile is set so that the ROIs can be accessed later
-        roi_shapefile = layer
-    #CHANGE TO treatment-areas
-    if "treatment-areas" in layer.name():
-        #the variable roi_shapefile is set so that the treatment areas can be accessed later
-        treatment_areas = layer
+        if "mle-roi" in layer.name():
+            #the variable roi_shapefile is set so that the ROIs can be accessed later
+            roi_shapefile = layer
+        #CHANGE TO treatment-areas
+        if "treatment-areas" in layer.name():
+            #the variable roi_shapefile is set so that the treatment areas can be accessed later
+            treatment_areas = layer
 
-#All the layers will be printed if they were found, and appened to the error message if they were not
-for b in band_info:
-    #error messages for missing rasters
-    if band_info[b][2] == "":
-        missing_layers_error_message = missing_layers_error_message+"\nERROR: "+band_info[b][1]+"nm Raster Not found!\n'"+band_info[b][1]+"nm' must be in the title of a single raster layer.\n"
+    #All the layers will be printed if they were found, and appened to the error message if they were not
+    for b in band_info:
+        #error messages for missing rasters
+        if band_info[b][2] == "":
+            missing_layers_error_message = missing_layers_error_message+"\nERROR: "+band_info[b][1]+"nm Raster Not found!\n'"+band_info[b][1]+"nm' must be in the title of a single raster layer.\n"
+        else:
+            print(band_info[b][1]+" tif layer: "+band_info[b][2].name())
+
+    #error message for missing Roi shapefile
+    if roi_shapefile == "":
+        missing_layers_error_message = missing_layers_error_message+"\nERROR: mle-roi shapefile not found!\n'mle-roi' must be in the title of a single shapefile layer.\n"
     else:
-        print(band_info[b][1]+" tif layer: "+band_info[b][2].name())
+        print("ROI Shapefile: "+roi_shapefile.name())
+    
+    #error message for missing treatment areas shapefile
+    if treatment_areas == "":
+        missing_layers_error_message = missing_layers_error_message+"\nERROR: treatment-areas shapefile not found!\n'treatment-areas' must be in the title of a single shapefile layer.\n"
+    else:
+        print("Treatment Areas: "+treatment_areas.name())
 
-#error message for missing Roi shapefile
-if roi_shapefile == "":
-    missing_layers_error_message = missing_layers_error_message+"\nERROR: mle-roi shapefile not found!\n'mle-roi' must be in the title of a single shapefile layer.\n"
-else:
-    print("ROI Shapefile: "+roi_shapefile.name())
-   
-#error message for missing treatment areas shapefile
-if treatment_areas == "":
-    missing_layers_error_message = missing_layers_error_message+"\nERROR: treatment-areas shapefile not found!\n'treatment-areas' must be in the title of a single shapefile layer.\n"
-else:
-    print("Treatment Areas: "+treatment_areas.name())
-
-
-
-
+unique_roi_ids = []
+class_colors = None
+mle_adjusted_minimum_probability = None
+num_rois = 0
+raster_pixel_scale_x = None
+raster_pixel_scale_y = None
+def raster_definition():
 #If the error message is not empty, then print it. Otherwise, continue
-if missing_layers_error_message != "":
-    print(missing_layers_error_message)
-else:
+    if missing_layers_error_message != "":
+        print(missing_layers_error_message)
+    else:
 
-    #Set the raster pixel scales for x and y, read directly from the raster's properties
-    print(band_info[1][2])
-    raster_pixel_scale_x = band_info[1][2].rasterUnitsPerPixelX()
-    raster_pixel_scale_y = band_info[1][2].rasterUnitsPerPixelY()
-    #If the Debug option for reading only a portion of the pixels is set, then adjust the raster
-    #pixel scales to be larger, so more distance is covered with each iteration of the pixel read for loop
-    if pixel_read_proportion < 1:
-        square_pixel_scale = raster_pixel_scale_x * raster_pixel_scale_y
-        proportion_of_squared_pixel_size = square_pixel_scale / pixel_read_proportion
-        #This also accurately adjusts for area, so that the set proportion is equal to the two-dimensional proportion because pixels are 2D
-        scaled_pixel_scale_xy = math.pow(proportion_of_squared_pixel_size,0.5)
-        raster_pixel_scale_x = scaled_pixel_scale_xy
-        raster_pixel_scale_y = scaled_pixel_scale_xy
-    #Print variables to confirm they were set
-    print("raster pixel scale x: "+str(raster_pixel_scale_x))
-    print("raster pixel scale y: "+str(raster_pixel_scale_y))
+        #Set the raster pixel scales for x and y, read directly from the raster's properties
+        print(band_info[1][2])
+        raster_pixel_scale_x = band_info[1][2].rasterUnitsPerPixelX()
+        raster_pixel_scale_y = band_info[1][2].rasterUnitsPerPixelY()
+        #If the Debug option for reading only a portion of the pixels is set, then adjust the raster
+        #pixel scales to be larger, so more distance is covered with each iteration of the pixel read for loop
+        if pixel_read_proportion < 1:
+            square_pixel_scale = raster_pixel_scale_x * raster_pixel_scale_y
+            proportion_of_squared_pixel_size = square_pixel_scale / pixel_read_proportion
+            #This also accurately adjusts for area, so that the set proportion is equal to the two-dimensional proportion because pixels are 2D
+            scaled_pixel_scale_xy = math.pow(proportion_of_squared_pixel_size,0.5)
+            raster_pixel_scale_x = scaled_pixel_scale_xy
+            raster_pixel_scale_y = scaled_pixel_scale_xy
+        #Print variables to confirm they were set
+        print("raster pixel scale x: "+str(raster_pixel_scale_x))
+        print("raster pixel scale y: "+str(raster_pixel_scale_y))
 
-
-    print("Layers read and variables set.\n\n")
-    #If this script was previously ran in the same instance, the temporary layers will remain, so remove them if they exist, counting how many were deleted
-    print("Clearing Temporary Layers...")
-    num_layers_cleared = 0
-    for layer in layers:
-        if "merged-rois" in layer.name():
-            QgsProject.instance().removeMapLayer(layer.id())
-            num_layers_cleared += 1
-    print("Temporary Layers Cleared: "+str(num_layers_cleared)+".\n\n")
-
-
-    #Count the total number of ROIs, this number will only be used to seed the selection for ROIs for validation
-    print("Counting ROIs...")
-    num_rois = 0
-    for roi in roi_shapefile.getFeatures():
-        num_rois += 1
-        # print("ROI class: "+str(roi.attribute(roi_class_identifier)))
-    print(str(num_rois)+" ROIs Counted.\n\n")
+        print("Layers read and variables set.\n\n")
+        #If this script was previously ran in the same instance, the temporary layers will remain, so remove them if they exist, counting how many were deleted
+        print("Clearing Temporary Layers...")
+        num_layers_cleared = 0
+        for layer in layers:
+            if "merged-rois" in layer.name():
+                QgsProject.instance().removeMapLayer(layer.id())
+                num_layers_cleared += 1
+        print("Temporary Layers Cleared: "+str(num_layers_cleared)+".\n\n")
 
 
-    #This function will return a list of unique colors from a number n.
-    #The colors returned will be as different as possible, given n
-    #This function could definetley be shortned to a fraction of the lines
-    def Generate_Class_Colors(n):
-        class_colors_tbl = {
-            -1: [0,0,0]
-        }
-        for i in range(1,n+1):
-            r = 0
-            g = 0
-            b = 0
-            #p represents the proprtion of the current iteration, if there are 2 colors (n = 2),
-            #p will first be 0.5 and then 1
-            p = i/n
-            #This six state conditional has one condition for each of the 6 "phases" in the color variation method used
-            #one phase each for increase/decrease of r/g/b, (2*3 = 6) 
-            if p > 0 and p <= 1/6:
-                r = 255
-                g = 1530*p
-                b = 0
-            elif p > 1/6 and p <= 2/6:
-                r = 255-(1530*(p-(1/6)))
-                g = 255
-                b = 0
-            elif p > 2/6 and p <= 3/6:
+        #Count the total number of ROIs, this number will only be used to seed the selection for ROIs for validation
+        print("Counting ROIs...")
+
+        for roi in roi_shapefile.getFeatures():
+            num_rois += 1
+            # print("ROI class: "+str(roi.attribute(roi_class_identifier)))
+        print(str(num_rois)+" ROIs Counted.\n\n")
+
+        #This function will return a list of unique colors from a number n.
+        #The colors returned will be as different as possible, given n
+        #This function could definetley be shortned to a fraction of the lines
+        def Generate_Class_Colors(n): # n = len(unique_roi_ids)
+            class_colors_tbl = {
+                -1: [0,0,0]
+            }
+            for i in range(1,n+1):
                 r = 0
-                g = 255
-                b = 1530*(p-(2/6))
-            elif p > 3/6 and p <= 4/6:
-                r = 0
-                g = 255-(1530*(p-(3/6)))
-                b = 255
-            elif p > 4/6 and p <= 5/6:
-                r = 1530*(p-(4/6))
                 g = 0
-                b = 255
-            elif p > 5/6 and p <= 1:
-                r = 255
-                g = 0
-                b = 255-(1530*(p-(5/6)))
-            class_colors_tbl[i] = [math.floor(r),math.floor(g),math.floor(b)]
-        print("class_colors_tbl",class_colors_tbl)
-        return class_colors_tbl
+                b = 0
+                #p represents the proprtion of the current iteration, if there are 2 colors (n = 2),
+                #p will first be 0.5 and then 1
+                p = i/n
+                #This six state conditional has one condition for each of the 6 "phases" in the color variation method used
+                #one phase each for increase/decrease of r/g/b, (2*3 = 6) 
+                if p > 0 and p <= 1/6:
+                    r = 255
+                    g = 1530*p
+                    b = 0
+                elif p > 1/6 and p <= 2/6:
+                    r = 255-(1530*(p-(1/6)))
+                    g = 255
+                    b = 0
+                elif p > 2/6 and p <= 3/6:
+                    r = 0
+                    g = 255
+                    b = 1530*(p-(2/6))
+                elif p > 3/6 and p <= 4/6:
+                    r = 0
+                    g = 255-(1530*(p-(3/6)))
+                    b = 255
+                elif p > 4/6 and p <= 5/6:
+                    r = 1530*(p-(4/6))
+                    g = 0
+                    b = 255
+                elif p > 5/6 and p <= 1:
+                    r = 255
+                    g = 0
+                    b = 255-(1530*(p-(5/6)))
+                class_colors_tbl[i] = [math.floor(r),math.floor(g),math.floor(b)]
+            print("class_colors_tbl",class_colors_tbl)
+            return class_colors_tbl
 
+        #Count the number of unique classes among the ROIs in the roi-shapefile
+        print("Counting Number of Classes...")
+        for roi in roi_shapefile.getFeatures():
+            roi_id = roi.attribute(roi_class_identifier)
+            if not roi_id in unique_roi_ids:
+                unique_roi_ids.append(roi_id)
+        #adjust the minimum probability for one band by putting it the power of the number of bands
+        mle_adjusted_minimum_probability = math.pow(mle_minimum_probability,len(unique_roi_ids))
+        #create a list of unique colors for each class
+        class_colors = Generate_Class_Colors(len(unique_roi_ids))
+        print(str(len(unique_roi_ids))+" Classes Counted.\n\n")
+        print(class_colors)
 
-    #Count the number of unique classes among the ROIs in the roi-shapefile
-    print("Counting Number of Classes...")
-    unique_roi_ids = []
-    for roi in roi_shapefile.getFeatures():
-        roi_id = roi.attribute(roi_class_identifier)
-        if not roi_id in unique_roi_ids:
-            unique_roi_ids.append(roi_id)
-    #adjust the minimum probability for one band by putting it the power of the number of bands
-    mle_adjusted_minimum_probability = math.pow(mle_minimum_probability,len(unique_roi_ids))
-    #create a list of unique colors for each class
-    class_colors = Generate_Class_Colors(len(unique_roi_ids))
-    print(str(len(unique_roi_ids))+" Classes Counted.\n\n")
-    print(class_colors)
-
-
-
-
-    
-    #make an image for each class, so the color can be quantified
-    
+#make an image for each class, so the color can be quantified
+output_image_dir = None
+def make_image():
     print("Creating an image with the color of each class")
     output_image_dir = directory+"temp/visual_output/"+time.strftime("%Y-%m-%d_%H-%M-%S",time.localtime())
     os.mkdir(output_image_dir)
@@ -295,8 +306,6 @@ else:
         class_color_image_filename_path = output_image_dir+"/"+class_color_image_filename
         class_color_image.save(class_color_image_filename_path,'PNG',quality=100)
         print("class color saved as "+class_color_image_filename_path)
-
-
 
     print("Sorting ROIs for training/validation...")
     #Make a simple list, and fill it with every ROI from roi-shapefile
@@ -387,9 +396,6 @@ else:
         #Finally, the layer is added to the project and the writer is deleted
         iface.addVectorLayer(filename,"","ogr")
         del(writer)
-
-
-
     #Identify the new layer as the shapefile that will be used for statistics collections
     print("layer", QgsProject.instance().mapLayers().values())
     for layer in QgsProject.instance().mapLayers().values():
@@ -401,8 +407,23 @@ else:
     print("merge layer", merged_roi_shapefile_classification)
     print("ROIs merged, ready to collect statistics.\n\n")
 
-
-
+classified_pixel_dictionary = {}
+output_image_x_min = 9999999999
+output_image_x_max = 0
+output_image_y_min = 9999999999
+output_image_y_max = 0
+cm_characters_per_entry = 5
+confusion_matrix = {}
+def SpaceText(val,num_chars,first_char,last_char):
+        text = str(val)
+        for i in range(len(text),num_chars):
+            if i%2 == 0:
+                text = text+" "
+            else:
+                text = " "+text
+        return first_char+text+last_char
+        
+def calculate_std_and_mean():
     print("Calculating Mean and StDev...")
     #This for loop simply runs that zonal statistics tool on each of the new merged shapes.
     #Zonal statistics will output the results of the statistics by automatically adding new attributes to the shapefile (merged_roi_shapefile_classification) used
@@ -507,7 +528,7 @@ else:
     #This dictionary will store the number of classified pixels,
     #and the class that they were classified into as well as the treatment group they were read from
     print("Generating Dictionary to Track Classified Pixels...")
-    classified_pixel_dictionary = {}
+    
     for feature in treatment_areas.getFeatures():
         plotname = feature.attribute(treatment_area_identifier)
         #Initilize index -1 to zero to represent unclassifed pixels
@@ -533,8 +554,6 @@ else:
     
     #the confusion matrix will be generated as a dictionary
     print("Generating Confusion Matrix to Validate Classified Pixels...")
-    cm_characters_per_entry = 5
-    confusion_matrix = {}
     #one row and column for each class,
     #and 1 column (but no row) for unclassified (-1)
     for class_id in unique_roi_ids:
@@ -552,10 +571,6 @@ else:
     #this is so an array can be generated to store the classified pixels' values,
     #this array will later be transformed into and saved as an image
     print("Calculating Bounds for output image...")
-    output_image_x_min = 9999999999
-    output_image_x_max = 0
-    output_image_y_min = 9999999999
-    output_image_y_max = 0
     #To find these bounds, this for loop iterates over the bounding boxes of all the treatment areas
     for treatment_area in treatment_areas.getFeatures():
         treatment_area_geometry = treatment_area.geometry()
@@ -576,7 +591,45 @@ else:
     print("maxs: "+str(output_image_x_max)+","+str(output_image_y_max))
     
     #For the image, we will also store the x and y offsets of each tretment area's bonding box from the minimum corner of the entire image
-    treatment_area_offsets = {}
+treatment_area_offsets = {}
+def Normal_Distribution_Probability_Density(x,mean,sd):
+    return (1/(sd*(math.pow(2*pi,0.5))))*math.pow(euler,(-1/2)*math.pow(((x-mean)/(sd)),2))
+def MLE(value_list):
+        #initilize the highest found likelihood to 0
+        max_likelihood = 0.0
+        #Initilize the class id identified to -1. if not one class exceeds the minimum likelihood, we will return 0 for unclassified
+        max_likelilood_class_id = -1
+        #loop over all class ids
+        print("class_stats 467", class_statistics_dict)
+        for class_id in unique_roi_ids:
+            #access the dictionary at the index of the current class to get the mean and stdev
+            class_stats = class_statistics_dict[class_id]
+            #print("class_stats 470", class_stats)
+            #because this probability will be multipled by the probabilty at each band, initilize it to 1
+            total_class_probability = 1
+            for b in band_info:
+                #Band_info is indexed from 1, while value list is indexed from 0,
+                #so subtract 1 from b to index the value list
+                current_pixel_value = value_list[b-1]
+                #get the num of the wavelength to access that band in the stats dictionary
+                wavelength = band_info[b][0]
+                band_stats = class_stats[wavelength]
+                band_mean = band_stats[index_mean]
+                band_stdev = band_stats[index_stdev]
+                #Now pass the pixel's value, class's mean at this band, and class's stdev at this band into the NPDFunction
+                current_band_probability = Normal_Distribution_Probability_Density(current_pixel_value,band_mean,band_stdev)
+                #Multiply the class's total probability for all bands together
+                total_class_probability *= current_band_probability
+                
+            #now that we have to collective probabilities from this class multiplied together, we can see if it exceeds
+            #the minimum probability and the highest proability (maximum likelihood) found from all classes
+            if total_class_probability >= mle_adjusted_minimum_probability and total_class_probability > max_likelihood:
+                #If so, update the class that has now been deemed to be most likely the true container of this pixel
+                max_likelihood = total_class_probability
+                max_likelilood_class_id = class_id
+        #After iterating over all classes, return the id of the class that had the estimated maximum likelihood based off of the NPDF
+        return max_likelilood_class_id
+def treatment_area_calculations():
     for treatment_area in treatment_areas.getFeatures():
         treatment_area_geometry = treatment_area.geometry()
         bbox = treatment_area_geometry.boundingBox()
