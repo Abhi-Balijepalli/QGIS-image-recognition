@@ -1,6 +1,7 @@
 # ----===USER SETTINGS===----
 
 #PATH FOR THE TEMPORARY LAYERS (string (must be a valid directory with a '/' at the end; example: "c:/rcg/"))
+global directory
 directory = "T:\Teach\Classes\CS461\ReedCanary" + "/" # add an input that is the file directory 
 #This directory will determine where the temporary layers are placed.
 #THIS MUST BE SET TO A VALID DIRECTORY for this script to run.
@@ -155,6 +156,7 @@ def set_information():
     global missing_layers_error_message
     global roi_shapefile
     global layers
+    global band_info
     for b in band_info:
         for layer in layers:
             if band_info[b][1]+"nm" in layer.name():
@@ -249,6 +251,7 @@ def raster_definition():
     global roi_shapefile
     global pixel_read_proportion
     global mle_minimum_probability
+    global band_info
 #If the error message is not empty, then print it. Otherwise, continue
     if missing_layers_error_message != "":
         print(missing_layers_error_message)
@@ -354,6 +357,7 @@ def make_image():
     global unique_roi_ids
     global class_colors
     global num_rois
+    global band_info
     global output_image_dir
     global roi_shapefile
     print("Creating an image with the color of each class")
@@ -500,6 +504,7 @@ def calculate_std_and_mean():
     global class_statistics_dict
     global index_mean
     global index_stdev
+    global band_info
     global classified_pixel_dictionary
     global output_image_x_min
     global output_image_x_max
@@ -635,6 +640,7 @@ def MLE(value_list):
     global index_mean
     global index_stdev
     global unique_roi_ids
+    global band_info
     global mle_adjusted_minimum_probability
     #initilize the highest found likelihood to 0
     max_likelihood = 0.0
