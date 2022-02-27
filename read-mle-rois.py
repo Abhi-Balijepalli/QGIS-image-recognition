@@ -600,6 +600,8 @@ def treatment_area_calculations():
     global confusion_matrix
     global pixel_read_loop_max
     global treatment_area_identifier
+    global euler
+    global pi
     def SpaceText(val,num_chars,first_char,last_char):
         text = str(val)
         for i in range(len(text),num_chars):
