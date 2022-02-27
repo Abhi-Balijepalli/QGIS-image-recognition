@@ -1,7 +1,6 @@
 # ----===USER SETTINGS===----
 
 #PATH FOR THE TEMPORARY LAYERS (string (must be a valid directory with a '/' at the end; example: "c:/rcg/"))
-global directory
 directory = "T:\Teach\Classes\CS461\ReedCanary" + "/" # add an input that is the file directory 
 #This directory will determine where the temporary layers are placed.
 #THIS MUST BE SET TO A VALID DIRECTORY for this script to run.
@@ -322,6 +321,7 @@ def make_image():
     global output_image_dir
     global roi_shapefile
     global roi_validation_proportion
+    global directory
     print("Creating an image with the color of each class")
     output_image_dir = directory+"temp/visual_output/"+time.strftime("%Y-%m-%d_%H-%M-%S",time.localtime())
     os.mkdir(output_image_dir)
@@ -602,6 +602,8 @@ def treatment_area_calculations():
     global treatment_area_identifier
     global euler
     global pi
+    global start_time
+    global cm_characters_per_entry
     def SpaceText(val,num_chars,first_char,last_char):
         text = str(val)
         for i in range(len(text),num_chars):
