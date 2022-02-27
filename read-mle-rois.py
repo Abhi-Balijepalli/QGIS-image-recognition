@@ -91,28 +91,28 @@ start_time = time.time()
 #    band_number: [wavelength(nm), "wavelength(nm) as string", "empty value that will later hold this band's raster layer"]
 #}
 files = [] # we need to change this to the path of the tifs, create a function to store them in arrays?
-band_info = {} # new band_info
-def populate():
-    #files for the tif will be: pix4D_2019-04-03_transparent_reflectance_w550nm.tif
-    global band_info
-    key_num = 1
-    for tif_image in files:
-        temp_arr = tif_image.split("_")
-        band_string = temp_arr[-1]
-        band_num = ""
-        for i in band_string:
-            if i.isdigit():
-                band_num+=i
-        band_info[key_num] = [int(band_num), band_num, ""] #this will automate mason's band_info hashmap
-        key_num += 1
-    return band_info
+# band_info = {} # new band_info
+# def populate():
+#     #files for the tif will be: pix4D_2019-04-03_transparent_reflectance_w550nm.tif
+#     global band_info
+#     key_num = 1
+#     for tif_image in files:
+#         temp_arr = tif_image.split("_")
+#         band_string = temp_arr[-1]
+#         band_num = ""
+#         for i in band_string:
+#             if i.isdigit():
+#                 band_num+=i
+#         band_info[key_num] = [int(band_num), band_num, ""] #this will automate mason's band_info hashmap
+#         key_num += 1
+#     return band_info
 
-# band_info  = {
-# 	1: [550,"550",""],
-# 	2: [650,"650",""],
-# 	3: [710,"710",""],
-# 	4: [850,"850",""]
-# }
+band_info  = {
+	1: [550,"550",""],
+	2: [650,"650",""],
+	3: [710,"710",""],
+	4: [850,"850",""]
+}
 
 #These 4 variables will all later be set the their apporopriate shapefiles
 #An empty string is only used for a placeholder until the script can find the layers
@@ -154,6 +154,7 @@ def set_information():
     global treatment_areas
     global missing_layers_error_message
     global roi_shapefile
+    global layers
     for b in band_info:
         for layer in layers:
             if band_info[b][1]+"nm" in layer.name():
@@ -189,46 +190,46 @@ def set_information():
 #This function will return a list of unique colors from a number n.
 #The colors returned will be as different as possible, given n
 #This function could definetley be shortned to a fraction of the lines
-def Generate_Class_Colors(n): # n = len(unique_roi_ids)
-    class_colors_tbl = {
-        -1: [0,0,0]
-    }
-    for i in range(1,n+1):
-        r = 0
-        g = 0
-        b = 0
-        #p represents the proprtion of the current iteration, if there are 2 colors (n = 2),
-        #p will first be 0.5 and then 1
-        p = i/n
-        #This six state conditional has one condition for each of the 6 "phases" in the color variation method used
-        #one phase each for increase/decrease of r/g/b, (2*3 = 6) 
-        if p > 0 and p <= 1/6:
-            r = 255
-            g = 1530*p
-            b = 0
-        elif p > 1/6 and p <= 2/6:
-            r = 255-(1530*(p-(1/6)))
-            g = 255
-            b = 0
-        elif p > 2/6 and p <= 3/6:
-            r = 0
-            g = 255
-            b = 1530*(p-(2/6))
-        elif p > 3/6 and p <= 4/6:
-            r = 0
-            g = 255-(1530*(p-(3/6)))
-            b = 255
-        elif p > 4/6 and p <= 5/6:
-            r = 1530*(p-(4/6))
-            g = 0
-            b = 255
-        elif p > 5/6 and p <= 1:
-            r = 255
-            g = 0
-            b = 255-(1530*(p-(5/6)))
-        class_colors_tbl[i] = [math.floor(r),math.floor(g),math.floor(b)]
-    print("class_colors_tbl",class_colors_tbl)
-    return class_colors_tbl
+# def Generate_Class_Colors(n): # n = len(unique_roi_ids)
+#     class_colors_tbl = {
+#         -1: [0,0,0]
+#     }
+#     for i in range(1,n+1):
+#         r = 0
+#         g = 0
+#         b = 0
+#         #p represents the proprtion of the current iteration, if there are 2 colors (n = 2),
+#         #p will first be 0.5 and then 1
+#         p = i/n
+#         #This six state conditional has one condition for each of the 6 "phases" in the color variation method used
+#         #one phase each for increase/decrease of r/g/b, (2*3 = 6) 
+#         if p > 0 and p <= 1/6:
+#             r = 255
+#             g = 1530*p
+#             b = 0
+#         elif p > 1/6 and p <= 2/6:
+#             r = 255-(1530*(p-(1/6)))
+#             g = 255
+#             b = 0
+#         elif p > 2/6 and p <= 3/6:
+#             r = 0
+#             g = 255
+#             b = 1530*(p-(2/6))
+#         elif p > 3/6 and p <= 4/6:
+#             r = 0
+#             g = 255-(1530*(p-(3/6)))
+#             b = 255
+#         elif p > 4/6 and p <= 5/6:
+#             r = 1530*(p-(4/6))
+#             g = 0
+#             b = 255
+#         elif p > 5/6 and p <= 1:
+#             r = 255
+#             g = 0
+#             b = 255-(1530*(p-(5/6)))
+#         class_colors_tbl[i] = [math.floor(r),math.floor(g),math.floor(b)]
+#     print("class_colors_tbl",class_colors_tbl)
+#     return class_colors_tbl
 
 unique_roi_ids = []
 class_colors = None
@@ -246,6 +247,8 @@ def raster_definition():
     global raster_pixel_scale_x
     global raster_pixel_scale_y
     global roi_shapefile
+    global pixel_read_proportion
+    global mle_minimum_probability
 #If the error message is not empty, then print it. Otherwise, continue
     if missing_layers_error_message != "":
         print(missing_layers_error_message)
@@ -295,7 +298,48 @@ def raster_definition():
         #adjust the minimum probability for one band by putting it the power of the number of bands
         mle_adjusted_minimum_probability = math.pow(mle_minimum_probability,len(unique_roi_ids))
         #create a list of unique colors for each class
+        def Generate_Class_Colors(n): # n = len(unique_roi_ids)
+            class_colors_tbl = {
+                -1: [0,0,0]
+            }
+            for i in range(1,n+1):
+                r = 0
+                g = 0
+                b = 0
+                #p represents the proprtion of the current iteration, if there are 2 colors (n = 2),
+                #p will first be 0.5 and then 1
+                p = i/n
+                #This six state conditional has one condition for each of the 6 "phases" in the color variation method used
+                #one phase each for increase/decrease of r/g/b, (2*3 = 6) 
+                if p > 0 and p <= 1/6:
+                    r = 255
+                    g = 1530*p
+                    b = 0
+                elif p > 1/6 and p <= 2/6:
+                    r = 255-(1530*(p-(1/6)))
+                    g = 255
+                    b = 0
+                elif p > 2/6 and p <= 3/6:
+                    r = 0
+                    g = 255
+                    b = 1530*(p-(2/6))
+                elif p > 3/6 and p <= 4/6:
+                    r = 0
+                    g = 255-(1530*(p-(3/6)))
+                    b = 255
+                elif p > 4/6 and p <= 5/6:
+                    r = 1530*(p-(4/6))
+                    g = 0
+                    b = 255
+                elif p > 5/6 and p <= 1:
+                    r = 255
+                    g = 0
+                    b = 255-(1530*(p-(5/6)))
+                class_colors_tbl[i] = [math.floor(r),math.floor(g),math.floor(b)]
+            print("class_colors_tbl",class_colors_tbl)
+            return class_colors_tbl
         class_colors = Generate_Class_Colors(len(unique_roi_ids))
+        
         print(str(len(unique_roi_ids))+" Classes Counted.\n\n")
         print(class_colors)
 
@@ -638,6 +682,7 @@ def treatment_area_calculations():
     global treatment_area_offsets
     global output_image_x_min
     global confusion_matrix
+    global pixel_read_loop_max
     for treatment_area in treatment_areas.getFeatures():
         treatment_area_geometry = treatment_area.geometry()
         bbox = treatment_area_geometry.boundingBox()
