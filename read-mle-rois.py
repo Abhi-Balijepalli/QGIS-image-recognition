@@ -107,12 +107,12 @@ def populate():
         key_num += 1
     return band_info
 
-band_info  = {
-	1: [550,"550",""],
-	2: [650,"650",""],
-	3: [710,"710",""],
-	4: [850,"850",""]
-}
+# band_info  = {
+# 	1: [550,"550",""],
+# 	2: [650,"650",""],
+# 	3: [710,"710",""],
+# 	4: [850,"850",""]
+# }
 
 #These 4 variables will all later be set the their apporopriate shapefiles
 #An empty string is only used for a placeholder until the script can find the layers
