@@ -148,6 +148,7 @@ layers = QgsProject.instance().mapLayers().values()
 def set_information():
     global treatment_areas
     global missing_layers_error_message
+    global roi_shapefile
     for b in band_info:
         for layer in layers:
             if band_info[b][1]+"nm" in layer.name():
@@ -239,6 +240,7 @@ def raster_definition():
     global num_rois
     global raster_pixel_scale_x
     global raster_pixel_scale_y
+    global roi_shapefile
 #If the error message is not empty, then print it. Otherwise, continue
     if missing_layers_error_message != "":
         print(missing_layers_error_message)
@@ -304,6 +306,7 @@ def make_image():
     global class_colors
     global num_rois
     global output_image_dir
+    global roi_shapefile
     print("Creating an image with the color of each class")
     output_image_dir = directory+"temp/visual_output/"+time.strftime("%Y-%m-%d_%H-%M-%S",time.localtime())
     os.mkdir(output_image_dir)
