@@ -192,47 +192,6 @@ def set_information():
 #This function will return a list of unique colors from a number n.
 #The colors returned will be as different as possible, given n
 #This function could definetley be shortned to a fraction of the lines
-# def Generate_Class_Colors(n): # n = len(unique_roi_ids)
-#     class_colors_tbl = {
-#         -1: [0,0,0]
-#     }
-#     for i in range(1,n+1):
-#         r = 0
-#         g = 0
-#         b = 0
-#         #p represents the proprtion of the current iteration, if there are 2 colors (n = 2),
-#         #p will first be 0.5 and then 1
-#         p = i/n
-#         #This six state conditional has one condition for each of the 6 "phases" in the color variation method used
-#         #one phase each for increase/decrease of r/g/b, (2*3 = 6) 
-#         if p > 0 and p <= 1/6:
-#             r = 255
-#             g = 1530*p
-#             b = 0
-#         elif p > 1/6 and p <= 2/6:
-#             r = 255-(1530*(p-(1/6)))
-#             g = 255
-#             b = 0
-#         elif p > 2/6 and p <= 3/6:
-#             r = 0
-#             g = 255
-#             b = 1530*(p-(2/6))
-#         elif p > 3/6 and p <= 4/6:
-#             r = 0
-#             g = 255-(1530*(p-(3/6)))
-#             b = 255
-#         elif p > 4/6 and p <= 5/6:
-#             r = 1530*(p-(4/6))
-#             g = 0
-#             b = 255
-#         elif p > 5/6 and p <= 1:
-#             r = 255
-#             g = 0
-#             b = 255-(1530*(p-(5/6)))
-#         class_colors_tbl[i] = [math.floor(r),math.floor(g),math.floor(b)]
-#     print("class_colors_tbl",class_colors_tbl)
-#     return class_colors_tbl
-
 unique_roi_ids = []
 class_colors = None
 mle_adjusted_minimum_probability = None
@@ -490,16 +449,6 @@ output_image_y_max = 0
 cm_characters_per_entry = 5
 confusion_matrix = {}
 
-#This function will space the text in the printing of the confusion matrix
-def SpaceText(val,num_chars,first_char,last_char):
-        text = str(val)
-        for i in range(len(text),num_chars):
-            if i%2 == 0:
-                text = text+" "
-            else:
-                text = " "+text
-        return first_char+text+last_char
-        
 def calculate_std_and_mean():
     print("Calculating Mean and StDev...")
     global merged_roi_shapefile_classification
@@ -633,8 +582,6 @@ def calculate_std_and_mean():
     
     #For the image, we will also store the x and y offsets of each tretment area's bonding box from the minimum corner of the entire image
 treatment_area_offsets = {}
-def Normal_Distribution_Probability_Density(x,mean,sd):
-    return (1/(sd*(math.pow(2*pi,0.5))))*math.pow(euler,(-1/2)*math.pow(((x-mean)/(sd)),2))
 
 #this function will actually consider the values at all bands in the table passed into it
 #This function is ran once for every pixel read,
@@ -653,6 +600,14 @@ def treatment_area_calculations():
     global confusion_matrix
     global pixel_read_loop_max
     global treatment_area_identifier
+    def SpaceText(val,num_chars,first_char,last_char):
+        text = str(val)
+        for i in range(len(text),num_chars):
+            if i%2 == 0:
+                text = text+" "
+            else:
+                text = " "+text
+        return first_char+text+last_char
     for treatment_area in treatment_areas.getFeatures():
         treatment_area_geometry = treatment_area.geometry()
         bbox = treatment_area_geometry.boundingBox()
@@ -754,6 +709,8 @@ def treatment_area_calculations():
                                 max_likelilood_class_id = -1
                                 #loop over all class ids
                                 print("class_stats 467", class_statistics_dict)
+                                def Normal_Distribution_Probability_Density(x,mean,sd):
+                                    return (1/(sd*(math.pow(2*pi,0.5))))*math.pow(euler,(-1/2)*math.pow(((x-mean)/(sd)),2))
                                 for class_id in unique_roi_ids:
                                     #access the dictionary at the index of the current class to get the mean and stdev
                                     class_stats = class_statistics_dict[class_id]
