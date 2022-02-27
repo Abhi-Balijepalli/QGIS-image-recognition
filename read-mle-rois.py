@@ -144,7 +144,7 @@ pi = math.pi
 #Make a string to track all of the missing layers as an error message. The program will only run if this reamins empty
 missing_layers_error_message = ""
 
-print("Reading Layers and setting variables...")
+#print("Reading Layers and setting variables...")
 #Read and set variables that were unset above
 #the layers variable will be used to access all the map layers in the current QGIS project
 layers = QgsProject.instance().mapLayers().values()
@@ -212,12 +212,12 @@ def raster_definition():
     global band_info
     global roi_class_identifier
     global roi_validation_pseudo_random
-#If the error message is not empty, then print it. Otherwise, continue
+#If the error message is not empty, then #print it. Otherwise, continue
     if missing_layers_error_message != "":
         print(missing_layers_error_message)
     else:
         #Set the raster pixel scales for x and y, read directly from the raster's properties
-        print(band_info[1][2])
+        #print(band_info[1][2])
         raster_pixel_scale_x = band_info[1][2].rasterUnitsPerPixelX()
         raster_pixel_scale_y = band_info[1][2].rasterUnitsPerPixelY()
         #If the Debug option for reading only a portion of the pixels is set, then adjust the raster
@@ -229,31 +229,31 @@ def raster_definition():
             scaled_pixel_scale_xy = math.pow(proportion_of_squared_pixel_size,0.5)
             raster_pixel_scale_x = scaled_pixel_scale_xy
             raster_pixel_scale_y = scaled_pixel_scale_xy
-        #Print variables to confirm they were set
-        print("raster pixel scale x: "+str(raster_pixel_scale_x))
-        print("raster pixel scale y: "+str(raster_pixel_scale_y))
+        ##print variables to confirm they were set
+        #print("raster pixel scale x: "+str(raster_pixel_scale_x))
+        #print("raster pixel scale y: "+str(raster_pixel_scale_y))
 
-        print("Layers read and variables set.\n\n")
+        #print("Layers read and variables set.\n\n")
         #If this script was previously ran in the same instance, the temporary layers will remain, so remove them if they exist, counting how many were deleted
-        print("Clearing Temporary Layers...")
+        #print("Clearing Temporary Layers...")
         num_layers_cleared = 0
         for layer in layers:
             if "merged-rois" in layer.name():
                 QgsProject.instance().removeMapLayer(layer.id())
                 num_layers_cleared += 1
-        print("Temporary Layers Cleared: "+str(num_layers_cleared)+".\n\n")
+        #print("Temporary Layers Cleared: "+str(num_layers_cleared)+".\n\n")
 
 
         #Count the total number of ROIs, this number will only be used to seed the selection for ROIs for validation
-        print("Counting ROIs...")
+        #print("Counting ROIs...")
 
         for roi in roi_shapefile.getFeatures():
             num_rois += 1
-            # print("ROI class: "+str(roi.attribute(roi_class_identifier)))
-        print(str(num_rois)+" ROIs Counted.\n\n")
+            # #print("ROI class: "+str(roi.attribute(roi_class_identifier)))
+        #print(str(num_rois)+" ROIs Counted.\n\n")
 
         #Count the number of unique classes among the ROIs in the roi-shapefile
-        print("Counting Number of Classes...")
+        #print("Counting Number of Classes...")
         for roi in roi_shapefile.getFeatures():
             roi_id = roi.attribute(roi_class_identifier)
             if not roi_id in unique_roi_ids:
@@ -299,12 +299,12 @@ def raster_definition():
                     g = 0
                     b = 255-(1530*(p-(5/6)))
                 class_colors_tbl[i] = [math.floor(r),math.floor(g),math.floor(b)]
-            print("class_colors_tbl",class_colors_tbl)
+            #print("class_colors_tbl",class_colors_tbl)
             return class_colors_tbl
         class_colors = Generate_Class_Colors(len(unique_roi_ids))
         
-        print(str(len(unique_roi_ids))+" Classes Counted.\n\n")
-        print(class_colors)
+        #print(str(len(unique_roi_ids))+" Classes Counted.\n\n")
+        #print(class_colors)
 
 #make an image for each class, so the color can be quantified
 output_image_dir = None
@@ -322,7 +322,7 @@ def make_image():
     global roi_shapefile
     global roi_validation_proportion
     global directory
-    print("Creating an image with the color of each class")
+    #print("Creating an image with the color of each class")
     output_image_dir = directory+"temp/visual_output/"+time.strftime("%Y-%m-%d_%H-%M-%S",time.localtime())
     os.mkdir(output_image_dir)
     class_color_image_dimensions = 128
@@ -339,9 +339,9 @@ def make_image():
         class_color_image_filename = "class_"+str(class_id)+"_color.png"
         class_color_image_filename_path = output_image_dir+"/"+class_color_image_filename
         class_color_image.save(class_color_image_filename_path,'PNG',quality=100)
-        print("class color saved as "+class_color_image_filename_path)
+        #print("class color saved as "+class_color_image_filename_path)
 
-    print("Sorting ROIs for training/validation...")
+    #print("Sorting ROIs for training/validation...")
     #Make a simple list, and fill it with every ROI from roi-shapefile
     shuffled_feature_list = []
     for roi in roi_shapefile.getFeatures():
@@ -380,11 +380,11 @@ def make_image():
                         class_validation_list.append(roi)
                     else:
                         class_training_list.append(roi)
-    print("ROIs sorted.\n\n")
+    #print("ROIs sorted.\n\n")
 
 
 
-    print("Merging training ROIs for statistics collection...")
+    #print("Merging training ROIs for statistics collection...")
     #The ROIs need to be merged, so that the mean and stdev can be calculated for the population of all pixels in all ROIs of the same class
     #Create a new layer for the merged ROIs
     shape_directory = directory+"temp/shapes/"+time.strftime("%Y-%m-%d_%H-%M-%S/",time.localtime())
@@ -403,7 +403,7 @@ def make_image():
         filename = shape_directory+"merged-rois-"+merged_roi_info[roi_type][0]+".shp"
         writer = QgsVectorFileWriter(filename,"UTF-8",temp_fields,QgsWkbTypes.Polygon,QgsCoordinateReferenceSystem("EPSG:2913"),"ESRI Shapefile")
         for class_id in unique_roi_ids:
-            print("Adding class "+str(class_id)+" to "+merged_roi_info[roi_type][0]+".shp")
+            #print("Adding class "+str(class_id)+" to "+merged_roi_info[roi_type][0]+".shp")
             
             #rois will be the list of roi geometries that need to be merged
             rois = class_roi_dict[class_id][roi_type]
@@ -431,15 +431,15 @@ def make_image():
         iface.addVectorLayer(filename,"","ogr")
         del(writer)
     #Identify the new layer as the shapefile that will be used for statistics collections
-    print("layer", QgsProject.instance().mapLayers().values())
+    #print("layer", QgsProject.instance().mapLayers().values())
     for layer in QgsProject.instance().mapLayers().values():
-        print("layer", layer)
+        #print("layer", layer)
         if "merged-rois-classification" in layer.name():
             merged_roi_shapefile_classification = layer
         elif "merged-rois-validation" in layer.name():
             merged_roi_shapefile_validation = layer
-    print("merge layer", merged_roi_shapefile_classification)
-    print("ROIs merged, ready to collect statistics.\n\n")
+    #print("merge layer", merged_roi_shapefile_classification)
+    #print("ROIs merged, ready to collect statistics.\n\n")
 
 classified_pixel_dictionary = {}
 output_image_x_min = 9999999999
@@ -450,7 +450,7 @@ cm_characters_per_entry = 5
 confusion_matrix = {}
 
 def calculate_std_and_mean():
-    print("Calculating Mean and StDev...")
+    #print("Calculating Mean and StDev...")
     global merged_roi_shapefile_classification
     global treatment_areas
     global class_statistics_dict
@@ -489,18 +489,18 @@ def calculate_std_and_mean():
             1,
             QgsZonalStatistics.Statistics(QgsZonalStatistics.StDev)
         ).calculateStatistics(None)
-    print("Calculated Mean and StDev.\n\n")
+    #print("Calculated Mean and StDev.\n\n")
 
 
 
-    print("Generating Statistics Dictionary...")
+    #print("Generating Statistics Dictionary...")
     #The dictionary that will store the statistics for quick access must now be filled by reading the attributes that were appended
     #to the shapefile by QgsZonalStatistics()
     merged_features = merged_roi_shapefile_classification.getFeatures()
-    print("getfeatures,", merged_roi_shapefile_classification.getFeatures())
-    print("merged_features", merged_features)
-    print("unique roi ids 436", unique_roi_ids)
-    print("merge features", merged_features)
+    #print("getfeatures,", merged_roi_shapefile_classification.getFeatures())
+    #print("merged_features", merged_features)
+    #print("unique roi ids 436", unique_roi_ids)
+    #print("merge features", merged_features)
     for class_id in unique_roi_ids:
         for merged_roi in merged_features:
             if class_id == merged_roi.attribute(roi_class_identifier):
@@ -513,11 +513,11 @@ def calculate_std_and_mean():
                         index_stdev: merged_roi[wavelength_string+"_stdev"],
                     }
                 class_statistics_dict[class_id] = current_class_stats
-                #print("--------------\nClass Stats\n-----------")
-                #print(class_id,current_class_stats)
+                ##print("--------------\nClass Stats\n-----------")
+                ##print(class_id,current_class_stats)
                 break
-    #print("class_stats",class_statistics_dict)
-    #print("Statistics Dictionary Generated\n\n")
+    ##print("class_stats",class_statistics_dict)
+    ##print("Statistics Dictionary Generated\n\n")
 
     #Actual equation for probability of a particular variable (band) for a given item (pixel).
    
@@ -528,7 +528,7 @@ def calculate_std_and_mean():
 
     #This dictionary will store the number of classified pixels,
     #and the class that they were classified into as well as the treatment group they were read from
-    print("Generating Dictionary to Track Classified Pixels...")
+    #print("Generating Dictionary to Track Classified Pixels...")
     
     for feature in treatment_areas.getFeatures():
         plotname = feature.attribute(treatment_area_identifier)
@@ -539,11 +539,11 @@ def calculate_std_and_mean():
         for class_id in unique_roi_ids:
             plot_counts[class_id] = 0
         classified_pixel_dictionary[plotname] = plot_counts
-        # print(classified_pixel_dictionary)
-    print("Empty Classified Pixel Dictionary Generated.\n\n")
+        # #print(classified_pixel_dictionary)
+    #print("Empty Classified Pixel Dictionary Generated.\n\n")
 
     #the confusion matrix will be generated as a dictionary
-    print("Generating Confusion Matrix to Validate Classified Pixels...")
+    #print("Generating Confusion Matrix to Validate Classified Pixels...")
     #one row and column for each class,
     #and 1 column (but no row) for unclassified (-1)
     for class_id in unique_roi_ids:
@@ -553,14 +553,14 @@ def calculate_std_and_mean():
         for class_id_2 in unique_roi_ids:
             matrix_row[class_id_2] = 0
         confusion_matrix[class_id] = matrix_row
-    print("confusion matrix 537", confusion_matrix)
-    print("Confusion Matrix Generated.\n\n")
+    #print("confusion matrix 537", confusion_matrix)
+    #print("Confusion Matrix Generated.\n\n")
 
 
     #the image bounds must be calculated, finding the smallest and largest x and y values of all pixels that will be read
     #this is so an array can be generated to store the classified pixels' values,
     #this array will later be transformed into and saved as an image
-    print("Calculating Bounds for output image...")
+    #print("Calculating Bounds for output image...")
     #To find these bounds, this for loop iterates over the bounding boxes of all the treatment areas
     for treatment_area in treatment_areas.getFeatures():
         treatment_area_geometry = treatment_area.geometry()
@@ -577,8 +577,8 @@ def calculate_std_and_mean():
             output_image_y_min = y_min
         if y_max > output_image_y_max:
             output_image_y_max = y_max
-    print("mins: "+str(output_image_x_min)+","+str(output_image_y_min))
-    print("maxs: "+str(output_image_x_max)+","+str(output_image_y_max))
+    #print("mins: "+str(output_image_x_min)+","+str(output_image_y_min))
+    #print("maxs: "+str(output_image_x_max)+","+str(output_image_y_max))
     
     #For the image, we will also store the x and y offsets of each tretment area's bonding box from the minimum corner of the entire image
 treatment_area_offsets = {}
@@ -636,11 +636,11 @@ def treatment_area_calculations():
     #This is why output_image_y_pixels is the first asrgument and ...image_x_pix... is the second
     output_image_array = np.zeros((output_image_y_pixels,output_image_x_pixels,3),dtype=np.uint8)
     
-    print("Empty Output Image Array created with bounds: x = "+str(output_image_x_pixels)+", y = "+str(output_image_y_pixels))
+    #print("Empty Output Image Array created with bounds: x = "+str(output_image_x_pixels)+", y = "+str(output_image_y_pixels))
 
 
     #Now we actually iterate over the pixels to classify them
-    print("Reading pixels in treatment areas...")
+    #print("Reading pixels in treatment areas...")
     #pixel_read_loop_break is used as debug option to compare to pixel_read_loop_max to stop early if needed
     pixel_read_loop_break = 0
     #Loop over every treatment area
@@ -649,7 +649,7 @@ def treatment_area_calculations():
         if pixel_read_loop_break < pixel_read_loop_max or pixel_read_loop_max < 1:
             #treatment_group is the treatment group identifier
             treatment_group = str(treatment_area.attribute(treatment_area_identifier))
-            print("Plot Name: "+treatment_group)
+            #print("Plot Name: "+treatment_group)
             #Prepare a dictionary to add up the classified pixel counts
             plot_counts = classified_pixel_dictionary[treatment_group]
             #get the geometry of the treatment area
@@ -712,13 +712,13 @@ def treatment_area_calculations():
                                 #Initilize the class id identified to -1. if not one class exceeds the minimum likelihood, we will return 0 for unclassified
                                 max_likelilood_class_id = -1
                                 #loop over all class ids
-                                print("class_stats 467", class_statistics_dict)
+                                #print("class_stats 467", class_statistics_dict)
                                 def Normal_Distribution_Probability_Density(x,mean,sd):
                                     return (1/(sd*(math.pow(2*pi,0.5))))*math.pow(euler,(-1/2)*math.pow(((x-mean)/(sd)),2))
                                 for class_id in unique_roi_ids:
                                     #access the dictionary at the index of the current class to get the mean and stdev
                                     class_stats = class_statistics_dict[class_id]
-                                    #print("class_stats 470", class_stats)
+                                    ##print("class_stats 470", class_stats)
                                     #because this probability will be multipled by the probabilty at each band, initilize it to 1
                                     total_class_probability = 1
                                     for b in band_info:
@@ -759,28 +759,28 @@ def treatment_area_calculations():
                                     break
                             
                             pixel_read_loop_break += 1
-            #Now print the counts of each class in this treatment area
+            #Now #print the counts of each class in this treatment area
             for class_id in plot_counts:
                 class_name = "Unclassified"
                 if class_id > 0:
                     class_name = "Class "+str(class_id)
-                print("\t"+class_name+": "+str(plot_counts[class_id]))
+                #print("\t"+class_name+": "+str(plot_counts[class_id]))
         else:
-            print("Stopping after "+str(pixel_read_loop_max)+" pixels")
+            #print("Stopping after "+str(pixel_read_loop_max)+" pixels")
             break
-    print("Treatment area pixels read.")
+    #print("Treatment area pixels read.")
 
-    #Print the matrix
+    ##print the matrix
     cm_column_labels = " Pred. unclas."
     for class_id in unique_roi_ids:
         cm_column_labels = cm_column_labels+SpaceText(class_id,cm_characters_per_entry," "," ")
-    print(cm_column_labels)
+    #print(cm_column_labels)
     for row in confusion_matrix:
         row_string = SpaceText(row,cm_characters_per_entry," ",":")
         column_pos = 1
         for column in confusion_matrix[row]:
             row_string = row_string+SpaceText(confusion_matrix[row][column],cm_characters_per_entry,"[","]")
-        print(row_string)
+        #print(row_string)
     
     #n = the total number of values in the confusion matrix (true positive + false positive + true negative + false negative)
     n = 0
@@ -803,7 +803,7 @@ def treatment_area_calculations():
                 value = confusion_matrix[row][column]
                 n += value
                 #This conditional tests if we are currently in a diagonal
-                # print(row,column,value)
+                # #print(row,column,value)
                 if row == column:
                     p0 += value
                 #Now we update the totals for the current row and column
@@ -817,9 +817,9 @@ def treatment_area_calculations():
         pe /= (n*n)    
         k = (p0-pe)/(1-pe)
     
-    print("p0: "+str(p0))
-    print("pe: "+str(pe))
-    print("k: "+str(k))
+    #print("p0: "+str(p0))
+    #print("pe: "+str(pe))
+    #print("k: "+str(k))
 
     end_time = time.time()
     
@@ -835,7 +835,7 @@ def treatment_area_calculations():
     #Precision and recall
     #Precision: Positive predicted values (tp)/(tp+fp)
     #Recall: tp/(tp+fn)
-    print("Calculating Precision and Recall...")
+    #print("Calculating Precision and Recall...")
     for class_id in unique_roi_ids:
         print("Class "+str(class_id)+":")
         tp = confusion_matrix[class_id][class_id]
@@ -858,14 +858,14 @@ def treatment_area_calculations():
             print("\tRecall: "+str(recall))
         else:
             print("\tRecall: divide by 0 error")
-    print("Precision and Recall Done.")
-    print("Saving output Image...")  
+    #print("Precision and Recall Done.")
+    #print("Saving output Image...")  
     #Make an image from the array that stored the location and class of each pixel
     output_image = im.fromarray(output_image_array,'RGB')
     output_image_filename = "classified_output.png"
     output_image_path = output_image_dir+"/"+output_image_filename
     output_image.save(output_image_path,'PNG',quality=100)
-    print("Output saved as "+output_image_path)
+    #print("Output saved as "+output_image_path)
 
 # if __name__ == "__main__":
     # I will add detailed descriptions for each function after debugging
