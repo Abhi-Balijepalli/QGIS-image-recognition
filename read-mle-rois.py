@@ -91,16 +91,21 @@ start_time = time.time()
 #    band_number: [wavelength(nm), "wavelength(nm) as string", "empty value that will later hold this band's raster layer"]
 #}
 files = [] # we need to change this to the path of the tifs, create a function to store them in arrays?
-# band_info = {} # new band_info
-# def populate():
-#     #files for the tif will be: nm_name.tif | nm is the 550,650...etc.
-#     key_num = 1
-#     for tif_image in files:
-#         temp_arr = tif_image.split("_")
-#         band_number = temp_arr[0]
-#         band_info[key_num] = [band_number, str(band_number), ""] #this will automate mason's band_info hashmap
-#         key_num += 1
-#     return band_info
+band_info = {} # new band_info
+def populate():
+    #files for the tif will be: pix4D_2019-04-03_transparent_reflectance_w550nm.tif
+    global band_info
+    key_num = 1
+    for tif_image in files:
+        temp_arr = tif_image.split("_")
+        band_string = temp_arr[-1]
+        band_num = ""
+        for i in band_string:
+            if i.isdigit():
+                band_num+=i
+        band_info[key_num] = [int(band_num), band_num, ""] #this will automate mason's band_info hashmap
+        key_num += 1
+    return band_info
 
 band_info  = {
 	1: [550,"550",""],
