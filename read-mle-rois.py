@@ -91,23 +91,23 @@ start_time = time.time()
 #    band_number: [wavelength(nm), "wavelength(nm) as string", "empty value that will later hold this band's raster layer"]
 #}
 files = [] # we need to change this to the path of the tifs, create a function to store them in arrays?
-band_info = {} # new band_info
-def populate():
-    #files for the tif will be: nm_name.tif | nm is the 550,650...etc.
-    key_num = 1
-    for tif_image in files:
-        temp_arr = tif_image.split("_")
-        band_number = temp_arr[0]
-        band_info[key_num] = [band_number, str(band_number), ""] #this will automate mason's band_info hashmap
-        key_num += 1
-    return band_info
+# band_info = {} # new band_info
+# def populate():
+#     #files for the tif will be: nm_name.tif | nm is the 550,650...etc.
+#     key_num = 1
+#     for tif_image in files:
+#         temp_arr = tif_image.split("_")
+#         band_number = temp_arr[0]
+#         band_info[key_num] = [band_number, str(band_number), ""] #this will automate mason's band_info hashmap
+#         key_num += 1
+#     return band_info
 
-# band_info  = {
-# 	1: [550,"550",""],
-# 	2: [650,"650",""],
-# 	3: [710,"710",""],
-# 	4: [850,"850",""]
-# }
+band_info  = {
+	1: [550,"550",""],
+	2: [650,"650",""],
+	3: [710,"710",""],
+	4: [850,"850",""]
+}
 
 #These 4 variables will all later be set the their apporopriate shapefiles
 #An empty string is only used for a placeholder until the script can find the layers
@@ -146,6 +146,8 @@ layers = QgsProject.instance().mapLayers().values()
 
 #This will loop over every band, searching for map layers with the string "(wavelength)nm" in their title, such as "550nm"
 def set_information():
+    global treatment_areas
+    global missing_layers_error_message
     for b in band_info:
         for layer in layers:
             if band_info[b][1]+"nm" in layer.name():
@@ -230,11 +232,17 @@ raster_pixel_scale_x = None
 raster_pixel_scale_y = None
 
 def raster_definition():
+    global missing_layers_error_message
+    global unique_roi_ids
+    global class_colors
+    global mle_adjusted_minimum_probability
+    global num_rois
+    global raster_pixel_scale_x
+    global raster_pixel_scale_y
 #If the error message is not empty, then print it. Otherwise, continue
     if missing_layers_error_message != "":
         print(missing_layers_error_message)
     else:
-
         #Set the raster pixel scales for x and y, read directly from the raster's properties
         print(band_info[1][2])
         raster_pixel_scale_x = band_info[1][2].rasterUnitsPerPixelX()
@@ -287,6 +295,15 @@ def raster_definition():
 #make an image for each class, so the color can be quantified
 output_image_dir = None
 def make_image():
+    global merged_roi_shapefile_classification
+    global merged_roi_shapefile_validation
+    global class_roi_dict
+    global index_training_roi
+    global index_validation_roi
+    global unique_roi_ids
+    global class_colors
+    global num_rois
+    global output_image_dir
     print("Creating an image with the color of each class")
     output_image_dir = directory+"temp/visual_output/"+time.strftime("%Y-%m-%d_%H-%M-%S",time.localtime())
     os.mkdir(output_image_dir)
@@ -426,6 +443,17 @@ def SpaceText(val,num_chars,first_char,last_char):
         
 def calculate_std_and_mean():
     print("Calculating Mean and StDev...")
+    global merged_roi_shapefile_classification
+    global treatment_areas
+    global class_statistics_dict
+    global index_mean
+    global index_stdev
+    global classified_pixel_dictionary
+    global output_image_x_min
+    global output_image_x_max
+    global output_image_y_min
+    global output_image_y_max
+    global confusion_matrix
     #This for loop simply runs that zonal statistics tool on each of the new merged shapes.
     #Zonal statistics will output the results of the statistics by automatically adding new attributes to the shapefile (merged_roi_shapefile_classification) used
     #This needs to loop over every band so, the difference between each iteration is the raster layer to collect statistics from
@@ -551,42 +579,57 @@ def Normal_Distribution_Probability_Density(x,mean,sd):
 #This function is ran once for every pixel read,
 #so this function is only classifiying one pixel each time it is called
 def MLE(value_list):
-        #initilize the highest found likelihood to 0
-        max_likelihood = 0.0
-        #Initilize the class id identified to -1. if not one class exceeds the minimum likelihood, we will return 0 for unclassified
-        max_likelilood_class_id = -1
-        #loop over all class ids
-        print("class_stats 467", class_statistics_dict)
-        for class_id in unique_roi_ids:
-            #access the dictionary at the index of the current class to get the mean and stdev
-            class_stats = class_statistics_dict[class_id]
-            #print("class_stats 470", class_stats)
-            #because this probability will be multipled by the probabilty at each band, initilize it to 1
-            total_class_probability = 1
-            for b in band_info:
-                #Band_info is indexed from 1, while value list is indexed from 0,
-                #so subtract 1 from b to index the value list
-                current_pixel_value = value_list[b-1]
-                #get the num of the wavelength to access that band in the stats dictionary
-                wavelength = band_info[b][0]
-                band_stats = class_stats[wavelength]
-                band_mean = band_stats[index_mean]
-                band_stdev = band_stats[index_stdev]
-                #Now pass the pixel's value, class's mean at this band, and class's stdev at this band into the NPDFunction
-                current_band_probability = Normal_Distribution_Probability_Density(current_pixel_value,band_mean,band_stdev)
-                #Multiply the class's total probability for all bands together
-                total_class_probability *= current_band_probability
-                
-            #now that we have to collective probabilities from this class multiplied together, we can see if it exceeds
-            #the minimum probability and the highest proability (maximum likelihood) found from all classes
-            if total_class_probability >= mle_adjusted_minimum_probability and total_class_probability > max_likelihood:
-                #If so, update the class that has now been deemed to be most likely the true container of this pixel
-                max_likelihood = total_class_probability
-                max_likelilood_class_id = class_id
-        #After iterating over all classes, return the id of the class that had the estimated maximum likelihood based off of the NPDF
-        return max_likelilood_class_id
+    global class_statistics_dict
+    global index_mean
+    global index_stdev
+    global unique_roi_ids
+    global mle_adjusted_minimum_probability
+    #initilize the highest found likelihood to 0
+    max_likelihood = 0.0
+    #Initilize the class id identified to -1. if not one class exceeds the minimum likelihood, we will return 0 for unclassified
+    max_likelilood_class_id = -1
+    #loop over all class ids
+    print("class_stats 467", class_statistics_dict)
+    for class_id in unique_roi_ids:
+        #access the dictionary at the index of the current class to get the mean and stdev
+        class_stats = class_statistics_dict[class_id]
+        #print("class_stats 470", class_stats)
+        #because this probability will be multipled by the probabilty at each band, initilize it to 1
+        total_class_probability = 1
+        for b in band_info:
+            #Band_info is indexed from 1, while value list is indexed from 0,
+            #so subtract 1 from b to index the value list
+            current_pixel_value = value_list[b-1]
+            #get the num of the wavelength to access that band in the stats dictionary
+            wavelength = band_info[b][0]
+            band_stats = class_stats[wavelength]
+            band_mean = band_stats[index_mean]
+            band_stdev = band_stats[index_stdev]
+            #Now pass the pixel's value, class's mean at this band, and class's stdev at this band into the NPDFunction
+            current_band_probability = Normal_Distribution_Probability_Density(current_pixel_value,band_mean,band_stdev)
+            #Multiply the class's total probability for all bands together
+            total_class_probability *= current_band_probability
+            
+        #now that we have to collective probabilities from this class multiplied together, we can see if it exceeds
+        #the minimum probability and the highest proability (maximum likelihood) found from all classes
+        if total_class_probability >= mle_adjusted_minimum_probability and total_class_probability > max_likelihood:
+            #If so, update the class that has now been deemed to be most likely the true container of this pixel
+            max_likelihood = total_class_probability
+            max_likelilood_class_id = class_id
+    #After iterating over all classes, return the id of the class that had the estimated maximum likelihood based off of the NPDF
+    return max_likelilood_class_id
 
 def treatment_area_calculations():
+    global merged_roi_shapefile_validation
+    global merged_roi_shapefile_classification
+    global treatment_areas
+    global unique_roi_ids
+    global raster_pixel_scale_x
+    global raster_pixel_scale_y
+    global output_image_dir
+    global treatment_area_offsets
+    global output_image_x_min
+    global confusion_matrix
     for treatment_area in treatment_areas.getFeatures():
         treatment_area_geometry = treatment_area.geometry()
         bbox = treatment_area_geometry.boundingBox()
@@ -799,11 +842,11 @@ def treatment_area_calculations():
     output_image.save(output_image_path,'PNG',quality=100)
     print("Output saved as "+output_image_path)
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # I will add detailed descriptions for each function after debugging
-    populate()
-    set_information()
-    raster_definition()
-    make_image()
-    calculate_std_and_mean()
-    treatment_area_calculations()
+    # populate()
+set_information()
+raster_definition()
+make_image()
+calculate_std_and_mean()
+treatment_area_calculations()
