@@ -456,6 +456,10 @@ class ReedCanaryProject:
 
 
     def newshp(self):
+        global location_Data
+        if location_Data == "":
+            self.iface.messageBar().pushMessage("Error", "No data selected", Qgis.Critical)
+            return 
         #This allows the user to search for a place to save a file, it also opens the directory traversal window
         if len(Data_file_list) == 0:
             self.iface.messageBar().pushMessage("Error", "No data selected", Qgis.Critical)
@@ -474,7 +478,7 @@ class ReedCanaryProject:
 
         #this actuall makes the new .shp layer with the Oregon projection, UTF-8  and with polygons as the roi
 
-        writer = QgsVectorFileWriter(filename2, "UTF-8", layerFields, QgsWkbTypes.Polygon, QgsCoordinateReferenceSystem("EPSG:2913"), 'ESRI Shapefile')
+        writer = QgsVectorFileWriter(filename2, "UTF-8", layerFields, QgsWkbTypes.Polygon, QgsCoordinateReferenceSystem(location_Data), 'ESRI Shapefile')
         if writer.hasError() != QgsVectorFileWriter.NoError:
             print("Error when creating shapefile: ", writer.errorMessage())
 
