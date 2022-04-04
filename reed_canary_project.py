@@ -22,6 +22,7 @@
  ***************************************************************************/
 """
 
+from qgis.gui import QgsMessageBar
 from qgis.PyQt.QtCore import *
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog, QDockWidget
@@ -60,10 +61,13 @@ Training_file_list = []
 
 directory_save_location = ""
 
+location_Data = ""
 
 #filename = ""
 class ReedCanaryProject:
     """QGIS Plugin Implementation."""
+
+
 
     def __init__(self, iface):
         """Constructor.
@@ -257,6 +261,8 @@ class ReedCanaryProject:
         self.dlg2.show() #shows the second UI
 
     def image_select_open(self):
+        global Data_file_list 
+        global location_Data
         if len(Data_file_list) != 0:
             Data_file_list.clear()
         self.dlg4.show()
@@ -268,7 +274,7 @@ class ReedCanaryProject:
         for layer in QgsProject.instance().layerTreeRoot().children():  #gets the layers
             item = QStandardItem(layer.name())
             check = Qt.Checked
-            item.setCheckState(check)
+            #item.setCheckState(check)
             item.setCheckable(True)
             model.appendRow(item)
             temp_2.append(layer.name())
@@ -296,16 +302,28 @@ class ReedCanaryProject:
         
         if len(Data_file_list) != 0:
             cnt = 0
-            for i in Data_file_list: #gets their path, this fucking sucks btw
+            for i in Data_file_list: #gets the selected layers path
                 temp = QgsProject.instance().mapLayersByName(i)
+                if location_Data == "":
+                    location_Data = temp[0].crs()
+                else:
+                    if location_Data != temp[0].crs():
+                        self.iface.messageBar().pushMessage("Error", "Selected Data ESPG does not match", Qgis.Critical)
+                        Data_file_list.clear()
+                        return
                 Data_file_list[cnt] = temp[0].dataProvider().dataSourceUri()
                 cnt += 1
-        else:
+        else: #just clear the list and return as if nothing happened (I know this is shoddy code)
             Data_file_list.clear()
             return
+
+       # if len(Data_file_list) != 0: 
+
         print("Data_FIle_LIST", Data_file_list)
 
     def trainingdata_select_open(self):
+        global Training_file_list
+        global location_Data
         if len(Training_file_list) != 0:
             Training_file_list.clear()
         self.dlg4.show()
@@ -317,7 +335,7 @@ class ReedCanaryProject:
         for layer in QgsProject.instance().layerTreeRoot().children():  #gets the layers
             item = QStandardItem(layer.name())
             check = Qt.Checked
-            item.setCheckState(check)
+            #item.setCheckState(check)
             item.setCheckable(True)
             model.appendRow(item)
             temp_2.append(layer.name())
@@ -347,6 +365,12 @@ class ReedCanaryProject:
             cnt = 0
             for i in Training_file_list: #gets their path, this fucking sucks btw
                 temp = QgsProject.instance().mapLayersByName(i)
+                if location_Data == "":
+                    location_Data = temp[0].crs()
+                if location_Data != temp[0].crs():
+                    self.iface.messageBar().pushMessage("Error", "Selected Data and Training Data ESPG does not match", Qgis.Critical)
+                    Training_file_list.clear()
+                    return
                 Training_file_list[cnt] = temp[0].dataProvider().dataSourceUri()
                 cnt += 1
         else:
@@ -363,7 +387,7 @@ class ReedCanaryProject:
             for i in range(0, len(algorithm_array)):
                 item = QStandardItem(algorithm_array[i])
                 check = Qt.Checked
-                item.setCheckState(check)
+                #item.setCheckState(check)
                 item.setCheckable(True)
                 model.appendRow(item)
                 Algorithm_use_list.append(algorithm_array[i])
@@ -373,7 +397,7 @@ class ReedCanaryProject:
             for i in range(0, len(algorithm_array)):
                 item = QStandardItem(algorithm_array[i])
                 check = Qt.Checked
-                item.setCheckState(check)
+                #item.setCheckState(check)
                 item.setCheckable(True)
                 model.appendRow(item)
                 Algorithm_use_list.append(algorithm_array[i])
@@ -433,8 +457,14 @@ class ReedCanaryProject:
 
     def newshp(self):
         #This allows the user to search for a place to save a file, it also opens the directory traversal window
+        if len(Data_file_list) == 0:
+            self.iface.messageBar().pushMessage("Error", "No data selected", Qgis.Critical)
+            return
+
         filename2, _filter = QFileDialog.getSaveFileName(  
-        self.dlg4, "Select output filename and destination","mle-roi", '*.shp')  
+        self.dlg4, "Select output filename and destination","mle-roi", '*.shp') 
+
+            
 
         # create fields
         #Creates the field 'class-id' inside the new .shp file
@@ -497,6 +527,6 @@ class ReedCanaryProject:
         if result:
             if directory_save_location == "":
                 print("Did not select a directory to save the output from this plugin")
-                sys.exit()
+                #sys.exit()
             filename = directory_save_location
             pass
