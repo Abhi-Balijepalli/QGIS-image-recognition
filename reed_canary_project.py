@@ -53,20 +53,20 @@ import random
 items_list = [] #Probably can get rid of this since this feature was basically scrapped
 items_name = [] #Same here
 
-Algorithm_use_list = []
-
-Data_file_list = []
-
-Training_file_list = []
-
-directory_save_location = ""
-
-location_Data = ""
 
 #filename = ""
 class ReedCanaryProject:
     """QGIS Plugin Implementation."""
 
+    Algorithm_use_list = []
+
+    Data_file_list = []
+
+    Training_file_list = []
+
+    directory_save_location = ""
+
+    location_Data = ""
 
 
     def __init__(self, iface):
@@ -260,17 +260,17 @@ class ReedCanaryProject:
 
         self.dlg2.show() #shows the second UI
 
-    def image_select_open(self):
-        global Data_file_list 
-        global location_Data
-        if len(Data_file_list) != 0:
-            Data_file_list.clear()
+    def image_select_open(self): #allows the user to select the file that is the actual data, checks the location data
+        #global Data_file_list 
+        #global location_Data
+        if len(self.Data_file_list) != 0:
+            self.Data_file_list.clear()
         self.dlg4.show()
         qListView = QDockWidget()
         temp_2 = []
         model = QStandardItemModel()
-        if len(Data_file_list) != 0:
-            Data_file_list.clear
+        if len(self.Data_file_list) != 0:
+            self.Data_file_list.clear
         for layer in QgsProject.instance().layerTreeRoot().children():  #gets the layers
             item = QStandardItem(layer.name())
             check = Qt.Checked
@@ -292,46 +292,46 @@ class ReedCanaryProject:
                     check.append(1)
             for i in range(0, len(check)):
                 if check[i] == 1:
-                    Data_file_list.append(temp_2[i])
+                    self.Data_file_list.append(temp_2[i])
                 else:
                     continue
-            if len(Data_file_list) == 0:          
+            if len(self.Data_file_list) == 0:          
                 print("ERROR: no data selected")
-                Data_file_list.clear()
+                self.Data_file_list.clear()
                 return
         
-        if len(Data_file_list) != 0:
+        if len(self.Data_file_list) != 0:
             cnt = 0
-            for i in Data_file_list: #gets the selected layers path
+            for i in self.Data_file_list: #gets the selected layers path
                 temp = QgsProject.instance().mapLayersByName(i)
-                if location_Data == "":
-                    location_Data = temp[0].crs()
+                if self.location_Data == "":
+                    self.location_Data = temp[0].crs()
                 else:
-                    if location_Data != temp[0].crs():
+                    if self.location_Data != temp[0].crs():
                         self.iface.messageBar().pushMessage("Error", "Selected Data ESPG does not match", Qgis.Critical)
-                        Data_file_list.clear()
+                        self.Data_file_list.clear()
                         return
-                Data_file_list[cnt] = temp[0].dataProvider().dataSourceUri()
+                self.Data_file_list[cnt] = temp[0].dataProvider().dataSourceUri()
                 cnt += 1
         else: #just clear the list and return as if nothing happened (I know this is shoddy code)
-            Data_file_list.clear()
+            self.Data_file_list.clear()
             return
 
        # if len(Data_file_list) != 0: 
 
-        print("Data_FIle_LIST", Data_file_list)
+        print("Data_FIle_LIST", self.Data_file_list)
 
-    def trainingdata_select_open(self):
-        global Training_file_list
-        global location_Data
-        if len(Training_file_list) != 0:
-            Training_file_list.clear()
+    def trainingdata_select_open(self): #opens the dialog box that allows the user to select the training data file, and when they click ok it adds it to a list, and checks the location data 
+       # global Training_file_list
+        #global location_Data
+        if len(self.Training_file_list) != 0:
+            self.Training_file_list.clear()
         self.dlg4.show()
         qListView = QDockWidget()
         temp_2 = []
         model = QStandardItemModel()
-        if len(Data_file_list) != 0:
-            Data_file_list.clear
+        if len(self.Training_file_list) != 0:
+           self.Training_file_list.clear
         for layer in QgsProject.instance().layerTreeRoot().children():  #gets the layers
             item = QStandardItem(layer.name())
             check = Qt.Checked
@@ -353,46 +353,46 @@ class ReedCanaryProject:
                     check.append(1)
             for i in range(0, len(check)):
                 if check[i] == 1:
-                    Training_file_list.append(temp_2[i])
+                    self.Training_file_list.append(temp_2[i])
                 else:
                     continue
-            if len(Training_file_list) == 0:          
+            if len(self.Training_file_list) == 0:          
                 print("ERROR: no training data selected")
-                Training_file_list.clear()
+                self.Training_file_list.clear()
                 return
         
-        if len(Training_file_list) != 0:
+        if len(self.Training_file_list) != 0:
             cnt = 0
-            for i in Training_file_list: #gets their path, this fucking sucks btw
+            for i in self.Training_file_list: #gets their path, this fucking sucks btw
                 temp = QgsProject.instance().mapLayersByName(i)
-                if location_Data == "":
-                    location_Data = temp[0].crs()
-                if location_Data != temp[0].crs():
+                if self.location_Data == "":
+                    self.location_Data = temp[0].crs()
+                if self.location_Data != temp[0].crs():
                     self.iface.messageBar().pushMessage("Error", "Selected Data and Training Data ESPG does not match", Qgis.Critical)
-                    Training_file_list.clear()
+                    self.Training_file_list.clear()
                     return
-                Training_file_list[cnt] = temp[0].dataProvider().dataSourceUri()
+                self.Training_file_list[cnt] = temp[0].dataProvider().dataSourceUri()
                 cnt += 1
         else:
-            Training_file_list.clear()
+            self.Training_file_list.clear()
             return
-        print("Training_file_list", Training_file_list)
+        print("Training_file_list", self.Training_file_list)
 
     def openAlgoPage(self):
         self.dlg3.show()
         qListView = QDockWidget()
         model = QStandardItemModel()
         algorithm_array = ["Maximum likelihood", "Random Forest"]
-        if len(Algorithm_use_list) == 0:
+        if len(self.Algorithm_use_list) == 0:
             for i in range(0, len(algorithm_array)):
                 item = QStandardItem(algorithm_array[i])
                 check = Qt.Checked
                 #item.setCheckState(check)
                 item.setCheckable(True)
                 model.appendRow(item)
-                Algorithm_use_list.append(algorithm_array[i])
+                self.Algorithm_use_list.append(algorithm_array[i])
         else:
-            Algorithm_use_list.clear()
+            self.Algorithm_use_list.clear()
             #print(Algorithm_use_list)
             for i in range(0, len(algorithm_array)):
                 item = QStandardItem(algorithm_array[i])
@@ -400,18 +400,18 @@ class ReedCanaryProject:
                 #item.setCheckState(check)
                 item.setCheckable(True)
                 model.appendRow(item)
-                Algorithm_use_list.append(algorithm_array[i])
+                self.Algorithm_use_list.append(algorithm_array[i])
    
         self.dlg3.listView.setModel(model)
         self.dlg3.listView.show()
         result = self.dlg3.exec_()
-        if len(Algorithm_use_list) != 0:
-            for i in range(0, len(Algorithm_use_list)):
+        if len(self.Algorithm_use_list) != 0:
+            for i in range(0, len(self.Algorithm_use_list)):
                 item = model.item(i)
                 if item.checkState() == QtCore.Qt.Unchecked:
-                    Algorithm_use_list.remove(Algorithm_use_list[i])
+                    self.Algorithm_use_list.remove(self.Algorithm_use_list[i])
                     i = 0
-        print("299",Algorithm_use_list)
+        print("299",self.Algorithm_use_list)
 
     # def vraster(self): #makes the new vrt and loads it into the project
     #     model = self.dlg2.listView.model()
@@ -443,25 +443,51 @@ class ReedCanaryProject:
     #         print("Layer failed to load!")
 
     def dir_path(self):
-        global directory_save_location
-        if directory_save_location != "":
-            directory_save_location = ""
+        #global directory_save_location
+        if self.directory_save_location != "":
+            self.directory_save_location = ""
         #if button == 2: #if the button is being pushed to retrieve a file (I do not think this does anything....)
         print("pressed button 2")
         filename, _filter = QFileDialog.getSaveFileName(  
         self.dlg2, "Select output location", "", '*.txt')  
-        directory_save_location = filename
-        print(directory_save_location)
+        self.directory_save_location = filename
+        temp = self.directory_save_location
+        self.directory_save_location = ""
+        temp_2 = ""
+        temp = temp[::-1]
+        #print("after making the new file and flip", temp)
+        for elements in temp:
+            
+            if elements == "/":
+                #print("found the first /", temp_2, temp)
+                #print("temp_2", temp_2, "temp", temp)
+                temp = temp[::-1]
+                temp_2 = temp_2[::-1]
+                #print("temp and temp_2 before the replace after changing to right side around", temp, temp_2)
+                #print(len(temp), len(temp_2))
+                temp.replace(temp_2, '', 1)
+                #print("temp after replace", temp)
+                try:
+                    self.directory_save_location = temp
+                    self.directory_save_location = self.directory_save_location[:len(self.directory_save_location) - len(temp_2)]
+                except:
+                    print("did not work")
+                
+                #print("end result", self.directory_save_location)
+                break
+
+            temp_2 = temp_2 + elements
+
 
 
 
     def newshp(self):
-        global location_Data
-        if location_Data == "":
+        #global location_Data
+        if self.location_Data == "":
             self.iface.messageBar().pushMessage("Error", "No data selected", Qgis.Critical)
             return 
         #This allows the user to search for a place to save a file, it also opens the directory traversal window
-        if len(Data_file_list) == 0:
+        if len(self.Data_file_list) == 0:
             self.iface.messageBar().pushMessage("Error", "No data selected", Qgis.Critical)
             return
 
@@ -478,7 +504,7 @@ class ReedCanaryProject:
 
         #this actuall makes the new .shp layer with the Oregon projection, UTF-8  and with polygons as the roi
 
-        writer = QgsVectorFileWriter(filename2, "UTF-8", layerFields, QgsWkbTypes.Polygon, QgsCoordinateReferenceSystem(location_Data), 'ESRI Shapefile')
+        writer = QgsVectorFileWriter(filename2, "UTF-8", layerFields, QgsWkbTypes.Polygon, QgsCoordinateReferenceSystem(self.location_Data), 'ESRI Shapefile')
         if writer.hasError() != QgsVectorFileWriter.NoError:
             print("Error when creating shapefile: ", writer.errorMessage())
 

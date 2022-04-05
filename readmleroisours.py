@@ -1,7 +1,7 @@
 # ----===USER SETTINGS===----
 
 #PATH FOR THE TEMPORARY LAYERS (string (must be a valid directory with a '/' at the end; example: "c:/rcg/"))
-directory = r"C:\Users\logan\Desktop\Stuff_for_Capstone" + "/" # add an input that is the file directory 
+directory = ReedCanaryProject.directory_save_location + "/" #rC:\Users\logan\Desktop\Stuff_for_Capstone" + "/" # add an input that is the file directory 
 #This directory will determine where the temporary layers are placed.
 #THIS MUST BE SET TO A VALID DIRECTORY for this script to run.
 #However, the directory does not need to already exist, as the script will create a new directory if it's not already there
@@ -39,7 +39,7 @@ temp = []
 #--=ADDITIONAL DEBUG OPTIONS=--
 
 #PIXEL READ LOOP MAX (min = 0, max = infinity)
-pixel_read_loop_max = 5000
+pixel_read_loop_max = 1
 #IF NOT DEBUGGING, LEAVE THIS AT 0
 #If this set to 0, all pixels will be read as normal
 #If this is set to above 0, only that many pixels will be read before the algorithm stops early.
@@ -70,6 +70,7 @@ from qgis.gui import QgsMessageBar
 from qgis.utils import iface
 from qgis.analysis import QgsZonalStatistics
 from osgeo import gdal
+from reed_canary_project import *
 gdal.AllRegister()
 
 #Create the directory if it doesn't already exist
@@ -871,6 +872,7 @@ def treatment_area_calculations():
     # I will add detailed descriptions for each function after debugging
     # populate()
 set_information()
+print(ReedCanaryProject.Training_file_list)
 raster_definition()
 make_image()
 calculate_std_and_mean()
