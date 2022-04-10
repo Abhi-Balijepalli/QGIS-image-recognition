@@ -21,6 +21,61 @@
  *                                                                         *
  ***************************************************************************/
 """
+# ----===USER SETTINGS===----
+
+#PATH FOR THE TEMPORARY LAYERS (string (must be a valid directory with a '/' at the end; example: "c:/rcg/"))
+ #rC:\Users\logan\Desktop\Stuff_for_Capstone" + "/" # add an input that is the file directory 
+#print(directory)
+#This directory will determine where the temporary layers are placed.
+#THIS MUST BE SET TO A VALID DIRECTORY for this script to run.
+#However, the directory does not need to already exist, as the script will create a new directory if it's not already there
+
+#ROI CLASS IDENTIFIER (string)
+roi_class_identifier = "class-id"
+#This string is used to determine the class of each ROI, the name of the field (attribute), whose value is set to a number for the class of the ROI
+#This will be set to the attribute name that identifies the roi feature within the mle-roi shapefile
+
+#TREATMENT AREA IDENTIFIER (string)
+treatment_area_identifier = "PlotName"
+#This script was made to iterate over treatment areas and provide results for each of these treatments,
+#This will be set to the attribute name that identifies the treatment area feature within the treatment-areas shapefile
+
+#ROI VALIDIATION PROPORTION (min = 0, max = 1)
+roi_validation_proportion = 0.33
+#Determines the proption of ROIs in each class that will be selected for validation
+#Example: If roi_validation_proportion == 0.33, then 1/3 of the ROIs will be used for
+#validation, and the remaining 2/3 will be used for classifiction
+
+#ROI VALIDATION SELECTION PSEUDO-RANDOM (True/False)
+roi_validation_pseudo_random = True
+#If True, the random selection will only be re shuffled when ROIs are added or removed
+#If False, every time the program is run (even if the ROIs are not changed) the selection
+#of which are used for validation/classification will be shuffled again, which will yield different results
+
+#MINIMUM PROBABILITY PER BAND (min = 0, max = 1)
+mle_minimum_probability = 0.001
+#Upon iteration of the Normal Distribution Probability Density Function (NDPDF) at all the bands within 1 pixel, the determined
+#probability (equal to (the result of NDPDF) ^ (the number of bands)) must be greater than (mle_minimum_probability) ^ (the number of bands)
+#otherwise, the pixel will be classified as "unclassified"
+
+temp = []
+
+#--=ADDITIONAL DEBUG OPTIONS=--
+
+#PIXEL READ LOOP MAX (min = 0, max = infinity)
+pixel_read_loop_max = 10000
+#IF NOT DEBUGGING, LEAVE THIS AT 0
+#If this set to 0, all pixels will be read as normal
+#If this is set to above 0, only that many pixels will be read before the algorithm stops early.
+
+#PIXEL READ PROPORTION (min = 0, max = 1)
+pixel_read_proportion = 1
+#IF NOT DEBUGGING, LEAVE THIS AT 1
+#If this is set to a value below 1, only that proportion of pixels will be read,
+#When this is below 1, pixels can also be skipped for validation, so this really messes with the validation results
+
+
+#--==end of user settings==--
 
 from qgis.gui import QgsMessageBar
 from qgis.PyQt.QtCore import *
@@ -34,8 +89,20 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from qgis.utils import iface
 from qgis.analysis import QgsZonalStatistics
-import time
+from PIL import Image as im
+import numpy as np
+from qgis.core import *
+from matplotlib.pyplot import imshow
+import os
+from qgis.PyQt.QtCore import QCoreApplication, QLocale, QThread, qDebug
+from qgis.PyQt.QtWidgets import QPushButton, QApplication
+from qgis.core import *
+from qgis.gui import QgsMessageBar
+from qgis.utils import iface
+from qgis.analysis import QgsZonalStatistics
+from osgeo import gdal
 import collections
+import sys
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
@@ -44,10 +111,6 @@ from .reed_canary_project_dialog import Test1Dialog
 from .reed_canary_project_dialog import AlgoDialog
 from .reed_canary_project_dialog import Image_SelectDialog
 import os.path
-import math
-import numpy as np
-from PIL import Image as im
-import random
 
 #temp_list = ["T:\\Teach\\Classes\\CS461\\ReedCanary\\Images\\pix4D_2019-04-03_transparent_reflectance_w550nm.tif"]
 items_list = [] #Probably can get rid of this since this feature was basically scrapped
@@ -251,7 +314,8 @@ class ReedCanaryProject:
         # show the dialog 
 
     def check_array(self, algo_array):
-        if collections.Counter(algo_array) == collections.Counter(Algorithm_use_list):
+        
+        if collections.Counter(algo_array) == collections.Counter(self.Algorithm_use_list):
             return True
         else:
             return False
@@ -477,6 +541,7 @@ class ReedCanaryProject:
                 break
 
             temp_2 = temp_2 + elements
+        print(self.directory_save_location)
 
 
 
@@ -520,13 +585,28 @@ class ReedCanaryProject:
 
     def run_algo(self):
         try:
-            print("run algo", Algorithm_use_list.index('Maximum likelihood', 0))
-            if Algorithm_use_list.index('Maximum likelihood', 0) >= 0:
-                    exec(open( self.plugin_dir + "/readmleroisours.py").read())
-            else:
-                print("Did not have Maximum likelihood algorthm selected, go to the algorithm tab and select it now")
-        except:
-            print("Error occured when trying to run the Maximum likelihood algorithm")
+            print(self.directory_save_location, self.Data_file_list, self.Training_file_list)
+            print("run algo", self.Algorithm_use_list.index('Maximum likelihood', 0))
+            #open(os.path.join(sys.path[0], "Some file.txt"), "r")
+            #cwd = os.getcwd()
+            #print()
+            f = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "test.txt"), "a")
+            print(f.name, os.getcwd())
+            f.write(self.directory_save_location + "\n")
+            for i in range(0, len(self.Data_file_list)):
+                f.write(self.Data_file_list[i] + "\n")
+            for i in range(0, len(self.Training_file_list)):
+                f.write(self.Training_file_list[i]+ "\n")
+            #f.close()
+            #if Algorithm_use_list.index('Maximum likelihood', 0) >= 0:
+            exec(open(self.plugin_dir + "/readmleroisours.py").read())
+            #os.system('python readmleroisours.py')
+            #os.system("python3 ./readmleroisours.py {self.directory_save_location}")
+            #print("afyer the os.system")
+            #else:
+                #print("Did not have Maximum likelihood algorthm selected, go to the algorithm tab and select it now")
+        except Exception as e:
+            print("Error occured when trying to run the Maximum likelihood algorithm", e)
         
 
     def run(self,checked):

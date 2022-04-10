@@ -1,7 +1,13 @@
 # ----===USER SETTINGS===----
+sys.path.append(".")
+from .reed_canary_project import ReedCanaryProject
+
+data_file_stuff = ""
+training_file_stuff = ""
 
 #PATH FOR THE TEMPORARY LAYERS (string (must be a valid directory with a '/' at the end; example: "c:/rcg/"))
-directory = ReedCanaryProject.directory_save_location + "/" #rC:\Users\logan\Desktop\Stuff_for_Capstone" + "/" # add an input that is the file directory 
+ #rC:\Users\logan\Desktop\Stuff_for_Capstone" + "/" # add an input that is the file directory 
+#print(directory)
 #This directory will determine where the temporary layers are placed.
 #THIS MUST BE SET TO A VALID DIRECTORY for this script to run.
 #However, the directory does not need to already exist, as the script will create a new directory if it's not already there
@@ -39,7 +45,7 @@ temp = []
 #--=ADDITIONAL DEBUG OPTIONS=--
 
 #PIXEL READ LOOP MAX (min = 0, max = infinity)
-pixel_read_loop_max = 1
+pixel_read_loop_max = 10000
 #IF NOT DEBUGGING, LEAVE THIS AT 0
 #If this set to 0, all pixels will be read as normal
 #If this is set to above 0, only that many pixels will be read before the algorithm stops early.
@@ -70,18 +76,12 @@ from qgis.gui import QgsMessageBar
 from qgis.utils import iface
 from qgis.analysis import QgsZonalStatistics
 from osgeo import gdal
-from reed_canary_project import *
+import sys
+
 gdal.AllRegister()
 
-#Create the directory if it doesn't already exist
-if not os.path.exists(directory):
-    os.mkdir(directory)
-if not os.path.exists(directory+"temp/"):
-    os.mkdir(directory+"temp/")
-if not os.path.exists(directory+"temp/shapes"):
-    os.mkdir(directory+"temp/shapes")
-if not os.path.exists(directory+"temp/visual_output"):
-    os.mkdir(directory+"temp/visual_output")
+
+
 
 #Start a timer
 start_time = time.time()
@@ -109,10 +109,10 @@ files = [] # we need to change this to the path of the tifs, create a function t
 #     return band_info
 
 band_info  = {
-	1: [550,"550",""],
-	2: [650,"650",""],
-	3: [710,"710",""],
-	4: [850,"850",""]
+	1: [0,"0",""],
+	2: [1,"1",""],
+	3: [2,"2",""],
+	4: [3,"3",""]
 }
 
 #These 4 variables will all later be set the their apporopriate shapefiles
@@ -157,11 +157,12 @@ def set_information():
     global roi_shapefile
     global layers
     global band_info
-    for b in band_info:
-        for layer in layers:
-            if band_info[b][1]+"nm" in layer.name():
-                #Once a layer is found that matches the criterion, the third value in the band_info dictionary will be set to that layer, so it can be accessed later
-                band_info[b][2] = layer
+    for b in range(0,3):
+        # for layer in layers:
+        #     if band_info[b][1]+"nm" in layer.name():
+        #         #Once a layer is found that matches the criterion, the third value in the band_info dictionary will be set to that layer, so it can be accessed later
+        #         band_info[b][2] = layer
+        band_info[b][2] = ReedCanaryProject.Data_file_list[b]
     for layer in layers:
         if "mle-roi" in layer.name():
             #the variable roi_shapefile is set so that the ROIs can be accessed later
@@ -474,7 +475,7 @@ def calculate_std_and_mean():
             merged_roi_shapefile_classification,
             #The second argument is the raster layer whose pixels will be read
             band_info[b][2],
-            #The third argument is the prefix on the title of the attribute column that will be added to the shapefile to sotre the results
+            #The third argument is the prefix on the title of the attribute column that will be added to the shapefile to store the results
             band_info[b][1]+"_",
             #The fourth argument is the band within the raster to read.
             #Because this script is built to used multiple raster layers, each with one band, this value is always 1
@@ -867,12 +868,38 @@ def treatment_area_calculations():
     output_image_path = output_image_dir+"/"+output_image_filename
     output_image.save(output_image_path,'PNG',quality=100)
     #print("Output saved as "+output_image_path)
+def dir_stuff():
+    global data_file_stuff
+    global training_file_stuff
+
+    f = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "test.txt"), "r")
+
+    temp = f.readlines()
+    
+    directory = temp[0]
+    directory = directory[:-1]
+
+    data_file_stuff = temp[1]
+    data_file_stuff = data_file_stuff[:-1]
+
+    training_file_stuff = temp[2]
+    training_file_stuff = training_file_stuff[:-1]
+    print(directory, data_file_stuff, training_file_stuff)
+    #Create the directory if it doesn't already exist
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+    if not os.path.exists(directory+"temp/"):
+        os.mkdir(directory+"temp/")
+    if not os.path.exists(directory+"temp/shapes"):
+        os.mkdir(directory+"temp/shapes")
+    if not os.path.exists(directory+"temp/visual_output"):
+        os.mkdir(directory+"temp/visual_output")
 
 # if __name__ == "__main__":
-    # I will add detailed descriptions for each function after debugging
-    # populate()
+#     # I will add detailed descriptions for each function after debugging
+#     # populate()
+dir_stuff()
 set_information()
-print(ReedCanaryProject.Training_file_list)
 raster_definition()
 make_image()
 calculate_std_and_mean()
