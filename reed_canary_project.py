@@ -92,6 +92,7 @@ from qgis.analysis import QgsZonalStatistics
 from PIL import Image as im
 import numpy as np
 from qgis.core import *
+import math
 from matplotlib.pyplot import imshow
 import os
 from qgis.PyQt.QtCore import QCoreApplication, QLocale, QThread, qDebug
@@ -111,6 +112,8 @@ from .reed_canary_project_dialog import Test1Dialog
 from .reed_canary_project_dialog import AlgoDialog
 from .reed_canary_project_dialog import Image_SelectDialog
 import os.path
+import time
+import random
 
 #temp_list = ["T:\\Teach\\Classes\\CS461\\ReedCanary\\Images\\pix4D_2019-04-03_transparent_reflectance_w550nm.tif"]
 items_list = [] #Probably can get rid of this since this feature was basically scrapped
@@ -424,10 +427,10 @@ class ReedCanaryProject:
                 print("ERROR: no training data selected")
                 self.Training_file_list.clear()
                 return
-        
+        #save = self.Training_file_list
         if len(self.Training_file_list) != 0:
             cnt = 0
-            for i in self.Training_file_list: #gets their path, this fucking sucks btw
+            for i in self.Training_file_list: #gets the files path, this is redundant now
                 temp = QgsProject.instance().mapLayersByName(i)
                 if self.location_Data == "":
                     self.location_Data = temp[0].crs()
@@ -440,6 +443,7 @@ class ReedCanaryProject:
         else:
             self.Training_file_list.clear()
             return
+        #self.Training_file_list = self.Training_file_list[0] + " " + save[0]
         print("Training_file_list", self.Training_file_list)
 
     def openAlgoPage(self):
@@ -597,7 +601,7 @@ class ReedCanaryProject:
                 f.write(self.Data_file_list[i] + "\n")
             for i in range(0, len(self.Training_file_list)):
                 f.write(self.Training_file_list[i]+ "\n")
-            #f.close()
+            f.close()
             #if Algorithm_use_list.index('Maximum likelihood', 0) >= 0:
             exec(open(self.plugin_dir + "/readmleroisours.py").read())
             #os.system('python readmleroisours.py')
@@ -607,6 +611,9 @@ class ReedCanaryProject:
                 #print("Did not have Maximum likelihood algorthm selected, go to the algorithm tab and select it now")
         except Exception as e:
             print("Error occured when trying to run the Maximum likelihood algorithm", e)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
         
 
     def run(self,checked):

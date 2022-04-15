@@ -1,6 +1,4 @@
 # ----===USER SETTINGS===----
-sys.path.append(".")
-from .reed_canary_project import ReedCanaryProject
 
 data_file_stuff = ""
 training_file_stuff = ""
@@ -108,12 +106,11 @@ files = [] # we need to change this to the path of the tifs, create a function t
 #         key_num += 1
 #     return band_info
 
-band_info  = {
-	1: [0,"0",""],
-	2: [1,"1",""],
-	3: [2,"2",""],
-	4: [3,"3",""]
-}
+band_info  = dict({ #changed so that we can dynamically change the length depending on the band numbers
+	 1: [1,"",""]
+    # 2: [2,"",""],
+    # 3: [3,"",""]
+})
 
 #These 4 variables will all later be set the their apporopriate shapefiles
 #An empty string is only used for a placeholder until the script can find the layers
@@ -157,28 +154,48 @@ def set_information():
     global roi_shapefile
     global layers
     global band_info
-    for b in range(0,3):
+    global data_file_stuff
+    global training_file_stuff
+    
+    print(data_file_stuff)
+    for layer in layers:
+        print(data_file_stuff.find(layer.name()))
+        if data_file_stuff.find(layer.name()) != -1:
+            print("found")
+            print(band_info[1])
+            band_info[1][1] = "band 1"
+            print(band_info[1])
+            band_info[1][2] = layer
+            print(band_info)
+        
+            #sys.exit()
+    #sys.exit("Hello!")
+
         # for layer in layers:
         #     if band_info[b][1]+"nm" in layer.name():
         #         #Once a layer is found that matches the criterion, the third value in the band_info dictionary will be set to that layer, so it can be accessed later
         #         band_info[b][2] = layer
-        band_info[b][2] = ReedCanaryProject.Data_file_list[b]
+        #band_info[b][2] = data_file_stuff
     for layer in layers:
         if "mle-roi" in layer.name():
+            print("found the mle-roi", layer.name())
             #the variable roi_shapefile is set so that the ROIs can be accessed later
             roi_shapefile = layer
         #CHANGE TO treatment-areas
-        if "treatment-areas" in layer.name():
+        if training_file_stuff.find(layer.name()) != -1:
+            print("found the training data", layer.name())
             #the variable roi_shapefile is set so that the treatment areas can be accessed later
             treatment_areas = layer
+            
 
     #All the layers will be printed if they were found, and appened to the error message if they were not
     for b in band_info:
         #error messages for missing rasters
-        if band_info[b][2] == "":
-            missing_layers_error_message = missing_layers_error_message+"\nERROR: "+band_info[b][1]+"nm Raster Not found!\n'"+band_info[b][1]+"nm' must be in the title of a single raster layer.\n"
-        else:
-            print(band_info[b][1]+" tif layer: "+band_info[b][2].name())
+        # if band_info[b][2] == "":
+        #     missing_layers_error_message = missing_layers_error_message+"\nERROR: "+band_info[b][1]+"nm Raster Not found!\n'"+band_info[b][1]+"nm' must be in the title of a single raster layer.\n"
+        # else:
+        print(band_info[b][1]+" tif layer: "+band_info[b][2].name())
+        break
     #error message for missing Roi shapefile
     if roi_shapefile == "":
         missing_layers_error_message = missing_layers_error_message+"\nERROR: mle-roi shapefile not found!\n'mle-roi' must be in the title of a single shapefile layer.\n"
@@ -228,7 +245,8 @@ def raster_definition():
             square_pixel_scale = raster_pixel_scale_x * raster_pixel_scale_y
             proportion_of_squared_pixel_size = square_pixel_scale / pixel_read_proportion
             #This also accurately adjusts for area, so that the set proportion is equal to the two-dimensional proportion because pixels are 2D
-            scaled_pixel_scale_xy = math.pow(proportion_of_squared_pixel_size,0.5)
+            print("test", 248)
+            scaled_pixel_scale_xy = proportion_of_squared_pixel_size**0.5 #math.pow(proportion_of_squared_pixel_size,0.5)
             raster_pixel_scale_x = scaled_pixel_scale_xy
             raster_pixel_scale_y = scaled_pixel_scale_xy
         ##print variables to confirm they were set
@@ -261,7 +279,8 @@ def raster_definition():
             if not roi_id in unique_roi_ids:
                 unique_roi_ids.append(roi_id)
         #adjust the minimum probability for one band by putting it the power of the number of bands
-        mle_adjusted_minimum_probability = math.pow(mle_minimum_probability,len(unique_roi_ids))
+        print("test, 281")
+        mle_adjusted_minimum_probability = mle_minimum_probability**len(unique_roi_ids)#math.pow(mle_minimum_probability,len(unique_roi_ids))
         #create a list of unique colors for each class
         def Generate_Class_Colors(n): # n = len(unique_roi_ids)
             class_colors_tbl = {
@@ -300,13 +319,14 @@ def raster_definition():
                     r = 255
                     g = 0
                     b = 255-(1530*(p-(5/6)))
+                print("maybe error", 322)
                 class_colors_tbl[i] = [math.floor(r),math.floor(g),math.floor(b)]
             #print("class_colors_tbl",class_colors_tbl)
             return class_colors_tbl
         class_colors = Generate_Class_Colors(len(unique_roi_ids))
         
-        #print(str(len(unique_roi_ids))+" Classes Counted.\n\n")
-        #print(class_colors)
+        print(str(len(unique_roi_ids))+" Classes Counted.\n\n")
+        print(class_colors, "class_colors")
 
 #make an image for each class, so the color can be quantified
 output_image_dir = None
@@ -324,13 +344,16 @@ def make_image():
     global roi_shapefile
     global roi_validation_proportion
     global directory
-    #print("Creating an image with the color of each class")
+    print("Creating an image with the color of each class")
     output_image_dir = directory+"temp/visual_output/"+time.strftime("%Y-%m-%d_%H-%M-%S",time.localtime())
     os.mkdir(output_image_dir)
     class_color_image_dimensions = 128
     #loop over every class
+    print(unique_roi_ids)
     for class_id in unique_roi_ids:
+        print("right before class_id in class colors")
         class_color = class_colors[class_id]
+        print("right after class_id in class colors")
         #Create an image 128x128
         class_color_image_array = np.zeros((class_color_image_dimensions,class_color_image_dimensions,3),dtype=np.uint8)
         #loop over every x and y to fill the image with the class color
@@ -341,7 +364,7 @@ def make_image():
         class_color_image_filename = "class_"+str(class_id)+"_color.png"
         class_color_image_filename_path = output_image_dir+"/"+class_color_image_filename
         class_color_image.save(class_color_image_filename_path,'PNG',quality=100)
-        #print("class color saved as "+class_color_image_filename_path)
+        print("class color saved as "+class_color_image_filename_path)
 
     #print("Sorting ROIs for training/validation...")
     #Make a simple list, and fill it with every ROI from roi-shapefile
@@ -382,7 +405,7 @@ def make_image():
                         class_validation_list.append(roi)
                     else:
                         class_training_list.append(roi)
-    #print("ROIs sorted.\n\n")
+    print("ROIs sorted.\n\n")
 
 
 
@@ -623,6 +646,7 @@ def treatment_area_calculations():
         y_max = bbox.yMaximum()
         
         #The locations need to be rounded because pixels values are placed into an array of integers
+        print("maybe error", 646)
         treatment_area_x_offset = math.ceil((x_min-output_image_x_min)/raster_pixel_scale_x)
         treatment_area_y_offset = math.ceil((y_min-output_image_y_min)/raster_pixel_scale_y)
         treatment_area_offsets[treatment_area.attribute(treatment_area_identifier)] = [treatment_area_x_offset,treatment_area_y_offset]
@@ -630,7 +654,7 @@ def treatment_area_calculations():
     #more simple calculations to find the x and y bounds of the image
     output_image_x_range = output_image_x_max - output_image_x_min
     output_image_y_range = output_image_y_max - output_image_y_min
-    
+    print("maybe error", 654)
     output_image_x_pixels = math.ceil(output_image_x_range / raster_pixel_scale_x)
     output_image_y_pixels = math.ceil(output_image_y_range / raster_pixel_scale_y)
     
@@ -663,6 +687,7 @@ def treatment_area_calculations():
             y_min = bbox.yMinimum()
             y_max = bbox.yMaximum()
             #calculate the number of pixels in the x and y dimension
+            print("maybe error", 687)
             x_range = math.ceil((x_max-x_min)/raster_pixel_scale_x)
             y_range = math.ceil((y_max-y_min)/raster_pixel_scale_y)
             #find the offset of the treatment area, so we can write the pixels to the output image in the right spot
@@ -871,7 +896,7 @@ def treatment_area_calculations():
 def dir_stuff():
     global data_file_stuff
     global training_file_stuff
-
+    global directory
     f = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "test.txt"), "r")
 
     temp = f.readlines()
@@ -894,6 +919,7 @@ def dir_stuff():
         os.mkdir(directory+"temp/shapes")
     if not os.path.exists(directory+"temp/visual_output"):
         os.mkdir(directory+"temp/visual_output")
+    f.close()
 
 # if __name__ == "__main__":
 #     # I will add detailed descriptions for each function after debugging
