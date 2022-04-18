@@ -161,13 +161,12 @@ def set_information():
     for layer in layers:
         print(data_file_stuff.find(layer.name()))
         if data_file_stuff.find(layer.name()) != -1:
-            print("found")
-            print(band_info[1])
-            band_info[1][1] = "band 1"
-            print(band_info[1])
-            band_info[1][2] = layer
-            print(band_info)
-        
+            print("band count", layer.bandCount() )
+            for i in range(1,layer.bandCount() + 1):
+                print("found")
+                name = layer.name()
+                band_info[i] = [i, "band_{}".format(i), "{}".format(layer.name())]
+    print(band_info)
             #sys.exit()
     #sys.exit("Hello!")
 
@@ -189,13 +188,13 @@ def set_information():
             
 
     #All the layers will be printed if they were found, and appened to the error message if they were not
-    for b in band_info:
+    #for b in band_info:
         #error messages for missing rasters
         # if band_info[b][2] == "":
         #     missing_layers_error_message = missing_layers_error_message+"\nERROR: "+band_info[b][1]+"nm Raster Not found!\n'"+band_info[b][1]+"nm' must be in the title of a single raster layer.\n"
         # else:
-        print(band_info[b][1]+" tif layer: "+band_info[b][2].name())
-        break
+        # print(band_info[b][1]+" tif layer: "+band_info[b][2].name())
+        # break
     #error message for missing Roi shapefile
     if roi_shapefile == "":
         missing_layers_error_message = missing_layers_error_message+"\nERROR: mle-roi shapefile not found!\n'mle-roi' must be in the title of a single shapefile layer.\n"
@@ -919,6 +918,7 @@ def dir_stuff():
         os.mkdir(directory+"temp/shapes")
     if not os.path.exists(directory+"temp/visual_output"):
         os.mkdir(directory+"temp/visual_output")
+   # os.remove("test.txt")
     f.close()
 
 # if __name__ == "__main__":
